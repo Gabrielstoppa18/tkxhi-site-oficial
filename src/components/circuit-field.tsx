@@ -36,7 +36,14 @@ const PADS = [
   [1040, 300],
 ];
 
-export function CircuitField({ className }: { className?: string }) {
+export function CircuitField({
+  className,
+  animated = false,
+}: {
+  className?: string;
+  /** Acende pulsos correndo pelas trilhas. Use com parcimônia: um por página. */
+  animated?: boolean;
+}) {
   return (
     <svg
       aria-hidden
@@ -59,6 +66,25 @@ export function CircuitField({ className }: { className?: string }) {
           <circle key={`${cx}-${cy}`} cx={cx} cy={cy} r={7} />
         ))}
       </g>
+
+      {animated ? (
+        <g
+          className="trace-pulse"
+          fill="none"
+          stroke="var(--primary)"
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          {TRACES.map((d, index) => (
+            <path
+              key={d}
+              d={d}
+              style={{ animationDelay: `${index * 0.85}s` }}
+            />
+          ))}
+        </g>
+      ) : null}
     </svg>
   );
 }

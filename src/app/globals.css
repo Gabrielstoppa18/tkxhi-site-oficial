@@ -236,3 +236,24 @@
     background-image: none;
   }
 }
+
+/* Pulso percorrendo as trilhas de placa, como corrente passando. */
+@keyframes trace-pulse {
+  from {
+    stroke-dashoffset: var(--trace-length, 1400);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+.trace-pulse path {
+  stroke-dasharray: 60 1400;
+  animation: trace-pulse 6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .trace-pulse {
+    display: none;
+  }
+}

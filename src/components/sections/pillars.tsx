@@ -64,7 +64,10 @@ export function Pillars() {
                   className="mt-8 inline-flex items-center gap-2 self-start rounded-sm text-sm font-medium text-primary hover:underline focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                 >
                   {pillar.cta}
-                  <ArrowRight aria-hidden className="size-4" />
+                  <ArrowRight
+                    aria-hidden
+                    className="size-4 transition-transform duration-300 group-hover:translate-x-1"
+                  />
                 </Link>
               </article>
             </Reveal>

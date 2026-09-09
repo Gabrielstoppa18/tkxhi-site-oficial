@@ -75,6 +75,12 @@ Fundo padrão: violeta quase preto `#190630`, derivado de `#250469` e `#350049`.
 
 **Pendência de asset:** o logotipo oficial (o selo circular e o lockup horizontal) ainda não está em `public/`. O `<Wordmark />` reproduz a sequência de cores em tipografia enquanto isso — troque por SVG quando os arquivos chegarem.
 
+**3D e interação.** `<PartViewer />` monta uma engrenagem flangeada gerada por código (sem arquivo de modelo) que se constrói camada a camada — o mesmo argumento do hero, em três dimensões. O three.js entra por `next/dynamic` com `ssr: false` e fica fora do payload inicial: **nunca importe `@react-three/*` estaticamente numa página**, são ~230 KB comprimidos. A cena é declarativa de propósito (sem `useFrame` mutando objetos), porque o React Compiler rejeita mutação de valores capturados por hook.
+
+**Ilustrações por nicho.** `<Schematic />`, `<LayerStack />` e `<PageSpread />` em `src/components/graphics/` são desenhos técnicos em SVG, um por frente, servidos dentro de `<MediaFrame />`. Quando as fotos reais existirem, passe `photo={{ src, alt }}` para a moldura — enquadramento, legenda e responsividade não mudam. Fotos a produzir: placa em bancada com instrumento à vista; peça saindo da impressora com camadas visíveis; livro ou manual aberto com luz lateral.
+
+**Pulsos nas trilhas.** `<CircuitField animated />` acende corrente correndo pelo desenho. Use **um por página** — hoje só na de Engenharia, que é o nicho a que o motivo pertence.
+
 **Não invente métricas.** A empresa é pequena e não publica números. Nada de "10k+ clientes" ou prova social fabricada.
 
 ## Design
