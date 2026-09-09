@@ -26,7 +26,10 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
     >
       <section className="relative isolate overflow-hidden">
         {!paper && (
-          <CircuitField className="[mask-image:radial-gradient(ellipse_75%_75%_at_50%_0%,black,transparent)] text-foreground/[0.07]" />
+          <CircuitField
+            animated={pillar.slug === "engenharia"}
+            className="[mask-image:radial-gradient(ellipse_75%_75%_at_50%_0%,black,transparent)] text-foreground/[0.07]"
+          />
         )}
         <div className="mx-auto w-full max-w-6xl px-6 pt-20 pb-16 sm:pt-24">
           <Reveal>

@@ -32,7 +32,7 @@ export function Pillars() {
               )}
             >
               {/* A cor da frente entra pela borda superior do painel. */}
-              <article className="flex h-full flex-col border-t-2 border-primary p-8 lg:p-10">
+              <article className="group flex h-full flex-col border-t-2 border-primary p-8 transition-colors duration-300 focus-within:bg-primary/[0.04] hover:bg-primary/[0.04] lg:p-10">
                 <div className="flex items-center justify-between gap-4">
                   <span className="font-mono text-[0.7rem] tracking-[0.22em] text-primary uppercase">
                     {pillar.state}
