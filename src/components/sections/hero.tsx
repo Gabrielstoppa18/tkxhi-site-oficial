@@ -112,16 +112,52 @@ export function Hero() {
         </motion.div>
       </div>
 
-      {/* Régua de estados: cada uma acesa na cor da sua frente. */}
-      <div className="border-y border-border/70">
-        <ol className="mx-auto flex w-full max-w-6xl divide-x divide-border px-6 font-mono text-[0.7rem] tracking-[0.18em] uppercase">
-          {pillars.map((pillar) => (
+      {/* Régua de estados: o percurso inteiro em uma linha, cada etapa na
+          cor da sua frente e ligada à seguinte. É a tese do site em miniatura. */}
+      <div className="relative border-y border-border/70">
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-px bg-[linear-gradient(to_right,#4dff73,#fea520_50%,#d457c7)] opacity-70"
+        />
+        <ol className="mx-auto grid w-full max-w-6xl gap-px px-6 py-8 sm:grid-cols-3">
+          {pillars.map((pillar, index) => (
             <li
               key={pillar.slug}
-              className={`${pillar.colorClass} flex flex-1 items-center gap-2 py-4 pl-4 first:pl-0`}
+              className={`${pillar.colorClass} group relative flex items-start gap-4 sm:pr-8`}
             >
-              <span aria-hidden className="size-1.5 rounded-full bg-primary" />
-              <span className="text-muted-foreground">{pillar.state}</span>
+              <span className="relative mt-1 flex size-3 shrink-0 items-center justify-center">
+                <span
+                  aria-hidden
+                  className="absolute inset-0 rounded-full bg-primary opacity-25 motion-safe:animate-ping"
+                  style={{ animationDelay: `${index * 0.6}s` }}
+                />
+                <span
+                  aria-hidden
+                  className="relative size-2 rounded-full bg-primary"
+                />
+              </span>
+
+              <div className="min-w-0">
+                <p className="font-mono text-[0.7rem] tracking-[0.22em] text-primary uppercase">
+                  {pillar.state}
+                </p>
+                <p className="mt-2 font-display text-lg font-bold tracking-tight">
+                  {pillar.title}
+                </p>
+                <p className="mt-1 text-sm text-pretty text-muted-foreground">
+                  {pillar.shortState}
+                </p>
+              </div>
+
+              {/* Conector para a próxima etapa. */}
+              {index < pillars.length - 1 && (
+                <span
+                  aria-hidden
+                  className="absolute top-1 right-0 hidden text-muted-foreground/50 sm:block"
+                >
+                  →
+                </span>
+              )}
             </li>
           ))}
         </ol>

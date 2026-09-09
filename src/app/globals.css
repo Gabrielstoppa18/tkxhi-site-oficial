@@ -257,3 +257,102 @@
     display: none;
   }
 }
+
+/* ---- Texturas de material ------------------------------------------------
+   Cada frente tem seu próprio material, não só sua cor. Dois painéis escuros
+   idênticos ao lado de um branco leem como erro; três materiais distintos
+   leem como sistema. */
+
+/* Engenharia: papel quadriculado de projeto. */
+.material-draft {
+  background-image:
+    linear-gradient(
+      to right,
+      color-mix(in oklab, var(--primary) 9%, transparent) 1px,
+      transparent 1px
+    ),
+    linear-gradient(
+      to bottom,
+      color-mix(in oklab, var(--primary) 9%, transparent) 1px,
+      transparent 1px
+    );
+  background-size: 22px 22px;
+}
+
+/* Impressão 3D: estrias de deposição. */
+.material-layered {
+  background-image: repeating-linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--primary) 10%, transparent) 0px,
+    color-mix(in oklab, var(--primary) 10%, transparent) 1px,
+    transparent 1px,
+    transparent 6px
+  );
+}
+
+/* Editora: retícula de meio-tom, a trama do impresso. */
+.material-halftone {
+  background-image: radial-gradient(
+    color-mix(in oklab, var(--primary) 22%, transparent) 1px,
+    transparent 1.4px
+  );
+  background-size: 7px 7px;
+}
+
+/* Marca de registro de impressão offset. */
+.registration-mark {
+  background-image:
+    linear-gradient(to right, currentColor 1px, transparent 1px),
+    linear-gradient(to bottom, currentColor 1px, transparent 1px);
+  background-position: center;
+  background-size:
+    100% 1px,
+    1px 100%;
+  background-repeat: no-repeat;
+}
+
+/* Fora de registro: o fantasma de cor que denuncia a impressão em camadas.
+   É o mesmo argumento do site — a peça é feita de passadas sobrepostas. */
+.misregistered {
+  text-shadow:
+    0.04em 0.03em 0 color-mix(in oklab, var(--mark-x) 42%, transparent),
+    -0.035em -0.025em 0 color-mix(in oklab, var(--mark-i) 34%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-ring {
+    animation: none !important;
+  }
+}
+
+@keyframes orbit-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.orbit-ring {
+  animation: orbit-spin var(--orbit-duration, 40s) linear infinite;
+}
+
+.orbit-ring[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+/* Contra-rotação: o nó gira ao contrário do anel para o conteúdo ficar de pé. */
+.orbit-node-inner {
+  animation: orbit-spin var(--orbit-duration, 40s) linear infinite reverse;
+}
+
+.orbit-node-inner[data-paused="true"] {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-node-inner {
+    animation: none !important;
+  }
+}

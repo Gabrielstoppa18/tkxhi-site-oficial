@@ -2,7 +2,7 @@ import { Hero } from "@/components/sections/hero";
 import { Pillars } from "@/components/sections/pillars";
 import { PartViewer } from "@/components/sections/part-viewer";
 import { Process } from "@/components/sections/process";
-import { Gallery } from "@/components/sections/gallery";
+import { Orbit } from "@/components/sections/orbit";
 import { EditoraBand } from "@/components/sections/editora-band";
 import { Cta } from "@/components/sections/cta";
 
@@ -13,7 +13,7 @@ export default function Home() {
       <Pillars />
       <PartViewer />
       <Process />
-      <Gallery />
+      <Orbit />
       <EditoraBand />
       <Cta />
     </main>

@@ -77,6 +77,14 @@ Fundo padrão: violeta quase preto `#190630`, derivado de `#250469` e `#350049`.
 
 **3D e interação.** `<PartViewer />` monta uma engrenagem flangeada gerada por código (sem arquivo de modelo) que se constrói camada a camada — o mesmo argumento do hero, em três dimensões. O three.js entra por `next/dynamic` com `ssr: false` e fica fora do payload inicial: **nunca importe `@react-three/*` estaticamente numa página**, são ~230 KB comprimidos. A cena é declarativa de propósito (sem `useFrame` mutando objetos), porque o React Compiler rejeita mutação de valores capturados por hook.
 
+**Três materiais, não só três cores.** Cada frente tem textura própria: `.material-draft` (malha de papel milimetrado, Engenharia), `.material-layered` (estrias de deposição, Impressão 3D), `.material-halftone` (retícula de meio-tom, Editora). Painéis que só mudam de cor leem como repetição; painéis que mudam de superfície leem como sistema. Nunca deixe dois painéis vizinhos com o mesmo material.
+
+**A Editora é uma folha de prova.** Marcas de registro nos cantos, barra de tintas da marca na borda e o título fora de registro (`.misregistered`, fantasma ciano e magenta). Livro não é assunto sóbrio aqui: é onde a casa mostra que mistura arte e técnica. Não "limpe" essa seção.
+
+**Fotos passam pela `<PhotoPlate />`,** nunca por um `<Image>` solto: canto chanfrado, duotone na cor da frente, retícula por cima e chapa fantasma deslocada atrás. Além de dar assinatura, o duotone resolve a paleta alheia que toda foto de banco carrega.
+
+**`<Orbit />` é a vitrine de serviços** — três anéis girando, um por frente, nove nós. Mouse ou foco de teclado congela a órbita e abre o detalhe; sem interação, ele cicla sozinho. Substituiu uma grade em que fotos e diagramas de frentes diferentes se misturavam sem hierarquia.
+
 **Ilustrações por nicho.** `<Schematic />`, `<LayerStack />` e `<PageSpread />` em `src/components/graphics/` são desenhos técnicos em SVG, um por frente, servidos dentro de `<MediaFrame />`. Quando as fotos reais existirem, passe `photo={{ src, alt }}` para a moldura — enquadramento, legenda e responsividade não mudam. Fotos a produzir: placa em bancada com instrumento à vista; peça saindo da impressora com camadas visíveis; livro ou manual aberto com luz lateral.
 
 **Pulsos nas trilhas.** `<CircuitField animated />` acende corrente correndo pelo desenho. Use **um por página** — hoje só na de Engenharia, que é o nicho a que o motivo pertence.

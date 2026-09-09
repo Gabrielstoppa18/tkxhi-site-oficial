@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Mail } from "lucide-react";
 import { CircuitField } from "@/components/circuit-field";
 import { Reveal } from "@/components/motion/reveal";
+import { PhotoPlate } from "@/components/photo-plate";
 import { Button } from "@/components/ui/button";
 import { pillars, type Pillar } from "@/lib/content";
 import { stockPhotos } from "@/lib/photos";
@@ -63,20 +63,12 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
           </Reveal>
 
           <Reveal delay={0.1} className="lg:col-span-5">
-            <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-border">
-              <Image
-                src={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].src}
-                alt={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].alt}
-                fill
-                priority
-                sizes="(min-width: 1024px) 40vw, 100vw"
-                className="object-cover"
-              />
-              <span
-                aria-hidden
-                className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent"
-              />
-            </div>
+            <PhotoPlate
+              src={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].src}
+              alt={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].alt}
+              annotation={pillar.state + " · " + pillar.title}
+              priority
+            />
           </Reveal>
         </div>
       </section>
