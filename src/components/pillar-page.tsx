@@ -1,0 +1,137 @@
+import Link from "next/link";
+import { ArrowRight, Mail } from "lucide-react";
+import { CircuitField } from "@/components/circuit-field";
+import { Reveal } from "@/components/motion/reveal";
+import { Button } from "@/components/ui/button";
+import { pillars, type Pillar } from "@/lib/content";
+import { siteConfig } from "@/lib/site-config";
+import { cn } from "cn";
+
+/**
+ * As três páginas internas compartilham a mesma estrutura e mudam de material:
+ * a Editora herda o registro em papel também aqui, não só na home.
+ */
+export function PillarPage({ pillar }: { pillar: Pillar }) {
+  const paper = pillar.register === "paper";
+  const Icon = pillar.icon;
+  const others = pillars.filter((item) => item.slug !== pillar.slug);
+
+  return (
+    <main
+      className={cn(
+        "flex flex-1 flex-col",
+        pillar.colorClass,
+        paper && "register-paper",
+      )}
+    >
+      <section className="relative isolate overflow-hidden">
+        {!paper && (
+          <CircuitField className="[mask-image:radial-gradient(ellipse_75%_75%_at_50%_0%,black,transparent)] text-foreground/[0.07]" />
+        )}
+        <div className="mx-auto w-full max-w-6xl px-6 pt-20 pb-16 sm:pt-24">
+          <Reveal>
+            <div className="flex items-center gap-3 font-mono text-[0.7rem] tracking-[0.22em] text-muted-foreground uppercase">
+              <Icon aria-hidden className="size-4 text-primary" />
+              {pillar.state}
+            </div>
+            <h1
+              className={cn(
+                "mt-6 text-[clamp(2.5rem,8vw,5rem)] leading-[0.95] font-bold tracking-[-0.03em]",
+                paper ? "font-serif" : "font-display uppercase",
+              )}
+            >
+              {pillar.title}
+            </h1>
+            <p className="mt-6 max-w-2xl text-xl text-pretty sm:text-2xl">
+              {pillar.lead}
+            </p>
+            <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
+              {pillar.summary}
+            </p>
+          </Reveal>
+        </div>
+      </section>
+
+      <section className="border-t border-border/70">
+        <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
+          <h2 className="font-mono text-[0.7rem] tracking-[0.22em] uppercase">
+            O que fazemos
+          </h2>
+          <div className="mt-8 grid border-t border-border/70 md:grid-cols-3">
+            {pillar.services.map((service, index) => (
+              <Reveal
+                key={service.title}
+                delay={index * 0.08}
+                className="border-b border-border/70 py-8 md:border-r md:border-b-0 md:pr-8 md:pl-8 md:first:pl-0 md:last:border-r-0"
+              >
+                <span className="font-mono text-xs tracking-[0.18em] text-muted-foreground">
+                  {String(index + 1).padStart(2, "0")}
+                </span>
+                <h3
+                  className={cn(
+                    "mt-4 text-xl font-bold tracking-tight",
+                    paper ? "font-serif" : "font-display",
+                  )}
+                >
+                  {service.title}
+                </h3>
+                <p className="mt-3 text-pretty text-muted-foreground">
+                  {service.description}
+                </p>
+              </Reveal>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-border/70">
+        <div className="mx-auto w-full max-w-6xl px-6 py-20">
+          <Reveal className="max-w-2xl">
+            <h2
+              className={cn(
+                "text-3xl font-bold tracking-tight text-balance sm:text-4xl",
+                paper ? "font-serif" : "font-display",
+              )}
+            >
+              {pillar.cta}.
+            </h2>
+            <p className="mt-4 text-pretty text-muted-foreground">
+              Descreva o problema em duas linhas. Respondemos dizendo se é
+              viável e por onde começaríamos.
+            </p>
+            <Button asChild size="lg" className="mt-8">
+              <a href={`mailto:${siteConfig.contact.email}`}>
+                <Mail aria-hidden />
+                {siteConfig.contact.email}
+              </a>
+            </Button>
+          </Reveal>
+
+          <nav
+            aria-label="Outras áreas"
+            className="mt-16 grid gap-px border-t border-border/70 pt-8 sm:grid-cols-2"
+          >
+            {others.map((item) => (
+              <Link
+                key={item.slug}
+                href={item.href}
+                className="group rounded-sm py-4 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              >
+                <span className="font-mono text-[0.7rem] tracking-[0.22em] text-muted-foreground uppercase">
+                  {item.state}
+                </span>
+                <span className="mt-2 flex items-center gap-2 text-xl font-medium">
+                  {item.title}
+                  <ArrowRight
+                    aria-hidden
+                    className="size-4 transition-transform group-hover:translate-x-1"
+                  />
+                </span>
+              </Link>
+            ))}
+          </nav>
+        </div>
+      </section>
+    </main>
+  );
+}
