@@ -1,9 +1,11 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Mail } from "lucide-react";
 import { CircuitField } from "@/components/circuit-field";
 import { Reveal } from "@/components/motion/reveal";
 import { Button } from "@/components/ui/button";
 import { pillars, type Pillar } from "@/lib/content";
+import { stockPhotos } from "@/lib/photos";
 import { siteConfig } from "@/lib/site-config";
 import { cn } from "cn";
 
@@ -11,6 +13,13 @@ import { cn } from "cn";
  * As três páginas internas compartilham a mesma estrutura e mudam de material:
  * a Editora herda o registro em papel também aqui, não só na home.
  */
+/** Foto de abertura de cada frente. Ver o aviso em src/lib/photos.ts. */
+const HERO_PHOTO = {
+  engenharia: stockPhotos.engenhariaTeste,
+  "impressao-3d": stockPhotos.impressaoDetalhe,
+  editora: stockPhotos.editoraPagina,
+} as const;
+
 export function PillarPage({ pillar }: { pillar: Pillar }) {
   const paper = pillar.register === "paper";
   const Icon = pillar.icon;
@@ -31,8 +40,8 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
             className="[mask-image:radial-gradient(ellipse_75%_75%_at_50%_0%,black,transparent)] text-foreground/[0.07]"
           />
         )}
-        <div className="mx-auto w-full max-w-6xl px-6 pt-20 pb-16 sm:pt-24">
-          <Reveal>
+        <div className="mx-auto grid w-full max-w-6xl gap-12 px-6 pt-20 pb-16 sm:pt-24 lg:grid-cols-12 lg:items-center">
+          <Reveal className="lg:col-span-7">
             <div className="flex items-center gap-3 font-mono text-[0.7rem] tracking-[0.22em] text-muted-foreground uppercase">
               <Icon aria-hidden className="size-4 text-primary" />
               {pillar.state}
@@ -51,6 +60,23 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
             <p className="mt-4 max-w-2xl text-pretty text-muted-foreground">
               {pillar.summary}
             </p>
+          </Reveal>
+
+          <Reveal delay={0.1} className="lg:col-span-5">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-lg border border-border">
+              <Image
+                src={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].src}
+                alt={HERO_PHOTO[pillar.slug as keyof typeof HERO_PHOTO].alt}
+                fill
+                priority
+                sizes="(min-width: 1024px) 40vw, 100vw"
+                className="object-cover"
+              />
+              <span
+                aria-hidden
+                className="absolute inset-0 bg-gradient-to-t from-background/70 to-transparent"
+              />
+            </div>
           </Reveal>
         </div>
       </section>

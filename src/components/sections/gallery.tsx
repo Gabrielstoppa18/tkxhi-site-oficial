@@ -4,36 +4,56 @@ import { MediaFrame } from "@/components/media-frame";
 import { Schematic } from "@/components/graphics/schematic";
 import { LayerStack } from "@/components/graphics/layer-stack";
 import { PageSpread } from "@/components/graphics/page-spread";
+import { stockPhotos } from "@/lib/photos";
 
 /**
- * Um quadro por frente. As ilustrações ficam no lugar até as fotos reais da
- * bancada existirem — quando existirem, passe `photo` para a moldura.
+ * Dois quadros por frente: uma foto do ofício e o desenho técnico que explica
+ * o que a foto mostra. A alternância entre fotografia e diagrama é o ritmo da
+ * seção — nenhuma frente aparece só de um jeito.
  *
- * Fotos a produzir, na ordem:
- *   1. placa de circuito em bancada, com instrumento à vista
- *   2. peça saindo da impressora, camadas visíveis, mesa ao fundo
- *   3. livro ou manual impresso aberto, luz lateral
+ * As fotos são de banco de imagens; veja o aviso em src/lib/photos.ts.
  */
 const FRAMES = [
   {
     colorClass: "pillar-engenharia",
     eyebrow: "Engenharia",
     caption:
-      "Do esquema à placa: definição de requisitos, escolha de componentes e validação em bancada.",
+      "Montagem e validação em bancada: componente posicionado, solda conferida, comportamento medido.",
+    photo: stockPhotos.engenhariaBancada,
+  },
+  {
+    colorClass: "pillar-engenharia",
+    eyebrow: "Engenharia · esquema",
+    caption:
+      "Antes da placa existe o esquema: encapsulamento, pinagem e roteamento definidos no papel.",
     graphic: <Schematic />,
   },
   {
     colorClass: "pillar-impressao-3d",
     eyebrow: "Impressão 3D",
     caption:
-      "Camadas de 0,2 mm empilhadas até a peça. Geometria livre, sem molde e sem lote mínimo.",
+      "Produção sem molde e sem lote mínimo: a mesma máquina faz o protótipo e a peça de uso final.",
+    photo: stockPhotos.impressaoMaquinas,
+  },
+  {
+    colorClass: "pillar-impressao-3d",
+    eyebrow: "Impressão 3D · corte",
+    caption:
+      "Camadas de 0,2 mm empilhadas até a peça. É a altura de camada que decide acabamento e tempo.",
     graphic: <LayerStack />,
   },
   {
     colorClass: "pillar-editora",
     eyebrow: "Editora",
     caption:
-      "Página dupla, mancha de texto e figura numerada. O projeto vira documento que outra pessoa consegue seguir.",
+      "O impresso ainda é o formato em que o conhecimento técnico envelhece melhor.",
+    photo: stockPhotos.editoraPaginas,
+  },
+  {
+    colorClass: "pillar-editora",
+    eyebrow: "Editora · diagramação",
+    caption:
+      "Mancha de texto, figura numerada e fólio: a página é projetada como qualquer outra peça.",
     graphic: <PageSpread />,
   },
 ];
@@ -46,7 +66,7 @@ export function Gallery() {
           <SectionHeading
             eyebrow="Da bancada"
             title="Três ofícios, três materiais."
-            lead="Cada frente trabalha com uma matéria-prima diferente e deixa um vestígio diferente."
+            lead="Cada frente trabalha com uma matéria-prima diferente e deixa um vestígio diferente. À direita de cada foto, o desenho que a explica."
           />
         </Reveal>
 
@@ -54,10 +74,14 @@ export function Gallery() {
           {FRAMES.map((frame, index) => (
             <Reveal
               key={frame.eyebrow}
-              delay={index * 0.08}
+              delay={(index % 3) * 0.08}
               className={frame.colorClass}
             >
-              <MediaFrame eyebrow={frame.eyebrow} caption={frame.caption}>
+              <MediaFrame
+                eyebrow={frame.eyebrow}
+                caption={frame.caption}
+                photo={frame.photo}
+              >
                 {frame.graphic}
               </MediaFrame>
             </Reveal>

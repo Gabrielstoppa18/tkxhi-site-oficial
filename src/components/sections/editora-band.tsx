@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
+import { PageSpread } from "@/components/graphics/page-spread";
 
 /**
  * O site muda de material aqui. A Editora não é mais uma seção escura: é papel,
@@ -37,6 +38,9 @@ export function EditoraBand() {
           </Reveal>
 
           <Reveal delay={0.1} className="md:col-span-5">
+            <div className="mb-8 aspect-[4/3] overflow-hidden rounded-lg border border-border bg-card/40 p-6 text-foreground/70">
+              <PageSpread />
+            </div>
             <dl className="divide-y divide-border">
               {[
                 ["Livros e artigos técnicos", "Edição e lançamento"],
