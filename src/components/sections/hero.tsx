@@ -41,7 +41,7 @@ export function Hero() {
 
         <h1 className="relative mt-6 select-none">
           <span className="sr-only">
-            Projetamos, imprimimos e publicamos. Engenharia, impressão 3D e
+            Projetamos, construímos e publicamos. Engenharia, impressão 3D e
             editora técnica da {siteConfig.name}.
           </span>
 

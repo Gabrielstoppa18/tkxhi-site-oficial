@@ -96,7 +96,7 @@ export const pillars: Pillar[] = [
     shortState: "arquivo vira objeto com peso",
     href: "/impressao-3d",
     state: "Matéria",
-    verb: "Imprimimos",
+    verb: "Construímos",
     title: "Impressão 3D",
     lead: "A ideia sai da tela e passa a ter peso.",
     summary:
