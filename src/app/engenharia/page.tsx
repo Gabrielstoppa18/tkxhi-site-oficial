@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PillarPage } from "@/components/pillar-page";
+import { TurtleT } from "@/components/sections/turtle-t";
 import { pillarBySlug } from "@/lib/content";
 
 const pillar = pillarBySlug("engenharia");
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 
 export default function EngenhariaPage() {
   if (!pillar) notFound();
-  return <PillarPage pillar={pillar} />;
+  return <PillarPage pillar={pillar} extra={<TurtleT />} />;
 }

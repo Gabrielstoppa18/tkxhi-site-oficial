@@ -1,31 +1,30 @@
+import Image from "next/image";
 import { cn } from "cn";
 
 /**
- * O logotipo tem cinco letras em cinco cores. Enquanto o arquivo vetorial
- * oficial não entra em public/, o tipográfico reproduz a mesma sequência.
+ * Lockup horizontal oficial, exportado do Canva e recortado na caixa do
+ * conteúdo (940 × 231). As letras têm desenho próprio — nenhuma fonte
+ * reproduz isso — então aqui é imagem, não tipografia.
+ *
+ * Ajuste o tamanho pela altura (`h-*`); a proporção acompanha sozinha.
  */
-const LETTERS = [
-  { char: "T", color: "var(--mark-t)" },
-  { char: "k", color: "var(--mark-k)" },
-  { char: "x", color: "var(--mark-x)" },
-  { char: "H", color: "var(--mark-h)" },
-  { char: "i", color: "var(--mark-i)" },
-];
-
-export function Wordmark({ className }: { className?: string }) {
+export function Wordmark({
+  className,
+  priority = false,
+}: {
+  className?: string;
+  priority?: boolean;
+}) {
   return (
-    <span
-      className={cn(
-        "font-display text-xl font-extrabold tracking-[-0.02em]",
-        className,
-      )}
-    >
-      <span className="sr-only">TkxHi</span>
-      {LETTERS.map((letter, index) => (
-        <span key={index} aria-hidden style={{ color: letter.color }}>
-          {letter.char}
-        </span>
-      ))}
+    <span className={cn("relative block aspect-[940/231] h-7", className)}>
+      <Image
+        src="/brand/tkxhi-wordmark.png"
+        alt="TkxHi"
+        fill
+        priority={priority}
+        sizes="240px"
+        className="object-contain"
+      />
     </span>
   );
 }

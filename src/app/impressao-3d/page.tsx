@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PillarPage } from "@/components/pillar-page";
+import { PartViewer } from "@/components/sections/part-viewer";
 import { pillarBySlug } from "@/lib/content";
 
 const pillar = pillarBySlug("impressao-3d");
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 
 export default function Impressao3dPage() {
   if (!pillar) notFound();
-  return <PillarPage pillar={pillar} />;
+  return <PillarPage pillar={pillar} extra={<PartViewer />} />;
 }

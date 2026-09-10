@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PillarPage } from "@/components/pillar-page";
+import { BookSeries } from "@/components/sections/book-series";
 import { pillarBySlug } from "@/lib/content";
 
 const pillar = pillarBySlug("editora");
@@ -13,5 +14,5 @@ export const metadata: Metadata = {
 
 export default function EditoraPage() {
   if (!pillar) notFound();
-  return <PillarPage pillar={pillar} />;
+  return <PillarPage pillar={pillar} extra={<BookSeries />} />;
 }

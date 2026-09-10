@@ -89,6 +89,12 @@ Fundo padrão: violeta quase preto `#190630`, derivado de `#250469` e `#350049`.
 
 **Pulsos nas trilhas.** `<CircuitField animated />` acende corrente correndo pelo desenho. Use **um por página** — hoje só na de Engenharia, que é o nicho a que o motivo pertence.
 
+**Assets de marca.** `public/brand/tkxhi-wordmark.png` é o lockup horizontal oficial, exportado do Canva e recortado na caixa do conteúdo — use sempre pelo `<Wordmark />`, nunca uma fonte imitando as letras. O ícone da aba (`src/app/icon.png`) é **provisório**: monta o lockup real dentro de um anel, porque a versão redonda do selo, com as trilhas de placa, ainda não chegou como arquivo. Substitua assim que chegar.
+
+**Contato sai do `site-config.ts`.** `whatsappUrl()` devolve `null` quando não há número, e `<ContactActions />` simplesmente não desenha o botão — melhor nenhum botão do que um que abre conversa com ninguém. Não escreva link de WhatsApp direto em componente.
+
+**Conteúdo real vem antes de conteúdo genérico.** As páginas internas mostram o que a casa de fato faz: o TurTle-T (robô com eletrônica, peças impressas e material didático) na Engenharia, a peça 3D na Impressão, a série Robótica Trip na Editora. Ao acrescentar conteúdo, prefira sempre um projeto existente a uma descrição abstrata de serviço.
+
 **Não invente métricas.** A empresa é pequena e não publica números. Nada de "10k+ clientes" ou prova social fabricada.
 
 ## Design

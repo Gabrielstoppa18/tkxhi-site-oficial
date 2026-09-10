@@ -1,8 +1,6 @@
-import { Mail } from "lucide-react";
 import { CircuitField } from "@/components/circuit-field";
 import { Reveal } from "@/components/motion/reveal";
-import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/lib/site-config";
+import { ContactActions } from "@/components/contact-actions";
 
 export function Cta() {
   return (
@@ -23,14 +21,7 @@ export function Cta() {
             Descreva o problema em duas linhas. Respondemos dizendo se é viável,
             por onde começaríamos e o que precisamos saber para orçar.
           </p>
-          <div className="mt-10 flex flex-wrap gap-3">
-            <Button asChild size="lg">
-              <a href={`mailto:${siteConfig.contact.email}`}>
-                <Mail aria-hidden />
-                {siteConfig.contact.email}
-              </a>
-            </Button>
-          </div>
+          <ContactActions className="mt-10" />
         </Reveal>
       </div>
     </section>

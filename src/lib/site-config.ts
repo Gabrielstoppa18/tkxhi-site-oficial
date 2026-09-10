@@ -10,11 +10,14 @@ export const siteConfig = {
   url: "https://tkxhi.com",
   locale: "pt-BR",
   cnpj: "51.860.522/0001-02",
-  // SUPOSIÇÃO: o site no ar não publica nenhum canal de contato. Este endereço
-  // é o padrão do domínio e precisa ser confirmado antes de ir ao ar.
   contact: {
+    // TODO: o usuário confirmou que este não é o endereço certo — trocar.
     email: "contato@tkxhi.com",
+    // Número no formato internacional, só dígitos: 55 + DDD + número.
+    // Ex.: "5511912345678". Vazio esconde o botão de WhatsApp no site inteiro.
     whatsapp: "",
+    whatsappMessage:
+      "Olá! Vim pelo site da TkxHi e quero falar sobre um projeto.",
   },
   links: {
     instagram: "",
@@ -39,3 +42,11 @@ export const legalNav = [
 ] as const;
 
 export type SiteConfig = typeof siteConfig;
+
+/** Link do WhatsApp com mensagem inicial, ou null se o número não estiver configurado. */
+export function whatsappUrl(): string | null {
+  const digits = siteConfig.contact.whatsapp.replace(/\D/g, "");
+  if (!digits) return null;
+  const text = encodeURIComponent(siteConfig.contact.whatsappMessage);
+  return `https://wa.me/${digits}?text=${text}`;
+}

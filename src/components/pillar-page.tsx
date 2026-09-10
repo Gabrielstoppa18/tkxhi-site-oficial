@@ -1,12 +1,12 @@
 import Link from "next/link";
-import { ArrowRight, Mail } from "lucide-react";
+import type { ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
 import { CircuitField } from "@/components/circuit-field";
 import { Reveal } from "@/components/motion/reveal";
 import { PhotoPlate } from "@/components/photo-plate";
-import { Button } from "@/components/ui/button";
+import { ContactActions } from "@/components/contact-actions";
 import { pillars, type Pillar } from "@/lib/content";
 import { stockPhotos } from "@/lib/photos";
-import { siteConfig } from "@/lib/site-config";
 import { cn } from "cn";
 
 /**
@@ -20,7 +20,14 @@ const HERO_PHOTO = {
   editora: stockPhotos.editoraPagina,
 } as const;
 
-export function PillarPage({ pillar }: { pillar: Pillar }) {
+export function PillarPage({
+  pillar,
+  extra,
+}: {
+  pillar: Pillar;
+  /** Seções específicas da frente, entre os serviços e a chamada final. */
+  extra?: ReactNode;
+}) {
   const paper = pillar.register === "paper";
   const Icon = pillar.icon;
   const others = pillars.filter((item) => item.slug !== pillar.slug);
@@ -105,6 +112,8 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
         </div>
       </section>
 
+      {extra}
+
       <section className="border-t border-border/70">
         <div className="mx-auto w-full max-w-6xl px-6 py-20">
           <Reveal className="max-w-2xl">
@@ -120,12 +129,7 @@ export function PillarPage({ pillar }: { pillar: Pillar }) {
               Descreva o problema em duas linhas. Respondemos dizendo se é
               viável e por onde começaríamos.
             </p>
-            <Button asChild size="lg" className="mt-8">
-              <a href={`mailto:${siteConfig.contact.email}`}>
-                <Mail aria-hidden />
-                {siteConfig.contact.email}
-              </a>
-            </Button>
+            <ContactActions className="mt-8" />
           </Reveal>
 
           <nav
