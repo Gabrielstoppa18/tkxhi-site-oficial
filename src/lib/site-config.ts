@@ -11,11 +11,12 @@ export const siteConfig = {
   locale: "pt-BR",
   cnpj: "51.860.522/0001-02",
   contact: {
-    // TODO: o usuário confirmou que este não é o endereço certo — trocar.
-    email: "contato@tkxhi.com",
-    // Número no formato internacional, só dígitos: 55 + DDD + número.
-    // Ex.: "5511912345678". Vazio esconde o botão de WhatsApp no site inteiro.
-    whatsapp: "",
+    email: "tkxhi.oficial@gmail.com",
+    // Formato internacional, só dígitos: 55 (Brasil) + 64 (DDD) + número.
+    // Vazio esconde o botão de WhatsApp no site inteiro.
+    whatsapp: "556420910881",
+    /** Como o número aparece para quem lê. */
+    phoneDisplay: "(64) 2091-0881",
     whatsappMessage:
       "Olá! Vim pelo site da TkxHi e quero falar sobre um projeto.",
   },
