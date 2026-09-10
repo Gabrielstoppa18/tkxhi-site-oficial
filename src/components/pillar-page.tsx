@@ -6,7 +6,7 @@ import { Reveal } from "@/components/motion/reveal";
 import { PhotoPlate } from "@/components/photo-plate";
 import { ContactActions } from "@/components/contact-actions";
 import { pillars, type Pillar } from "@/lib/content";
-import { stockPhotos } from "@/lib/photos";
+import { photos } from "@/lib/photos";
 import { cn } from "cn";
 
 /**
@@ -15,9 +15,9 @@ import { cn } from "cn";
  */
 /** Foto de abertura de cada frente. Ver o aviso em src/lib/photos.ts. */
 const HERO_PHOTO = {
-  engenharia: stockPhotos.engenhariaTeste,
-  "impressao-3d": stockPhotos.impressaoDetalhe,
-  editora: stockPhotos.editoraPagina,
+  engenharia: photos.turtleBancada,
+  "impressao-3d": photos.turtleCompleto,
+  editora: photos.atividadeTrilha,
 } as const;
 
 export function PillarPage({

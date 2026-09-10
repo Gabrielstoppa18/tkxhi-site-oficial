@@ -15,7 +15,7 @@ import { Schematic } from "@/components/graphics/schematic";
 import { LayerStack } from "@/components/graphics/layer-stack";
 import { PageSpread } from "@/components/graphics/page-spread";
 import { pillars } from "@/lib/content";
-import { stockPhotos } from "@/lib/photos";
+import { photos } from "@/lib/photos";
 import { cn } from "cn";
 
 /**
@@ -31,19 +31,19 @@ type Visual = { photo?: { src: string; alt: string }; graphic?: ReactNode };
 /** Uma foto, um diagrama e outra foto por frente — nunca dois iguais seguidos. */
 const VISUALS: Visual[][] = [
   [
-    { photo: stockPhotos.engenhariaBancada },
+    { photo: photos.turtleBancada },
     { graphic: <Schematic /> },
-    { photo: stockPhotos.engenhariaTeste },
+    { photo: photos.turtleSensor },
   ],
   [
-    { photo: stockPhotos.impressaoMaquinas },
+    { photo: photos.turtleCompleto },
     { graphic: <LayerStack /> },
-    { photo: stockPhotos.impressaoDetalhe },
+    { photo: photos.turtleMontagem },
   ],
   [
-    { photo: stockPhotos.editoraPaginas },
+    { photo: photos.capaTrip1 },
     { graphic: <PageSpread /> },
-    { photo: stockPhotos.editoraPagina },
+    { photo: photos.atividadeSensores },
   ],
 ];
 

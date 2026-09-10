@@ -1,10 +1,12 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ExternalLink } from "lucide-react";
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/section-heading";
+import { photos } from "@/lib/photos";
 
 /**
  * O TurTle-T é o caso que mostra as três frentes trabalhando juntas: eletrônica
@@ -302,6 +304,45 @@ export function TurtleT() {
               <ExternalLink aria-hidden className="size-4" />
             </a>
           </Reveal>
+        </div>
+
+        {/* O diagrama explica; as fotos provam que existe. */}
+        <div className="mt-16 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+          {[
+            [
+              photos.turtleCompleto,
+              "Chassi, cúpula e berço de sensor saem da impressora.",
+            ],
+            [
+              photos.turtleSensor,
+              "O módulo ultrassônico encaixado no suporte impresso.",
+            ],
+            [
+              photos.turtleBancada,
+              "Placa, sensores e fiação antes de virar robô.",
+            ],
+            [
+              photos.turtleMontagem,
+              "A montagem é parte da aula, não trabalho de bastidor.",
+            ],
+          ].map(([photo, caption], index) => (
+            <Reveal key={(photo as { src: string }).src} delay={index * 0.06}>
+              <figure>
+                <div className="relative aspect-[4/3] overflow-hidden rounded-sm border border-border">
+                  <Image
+                    src={(photo as { src: string }).src}
+                    alt={(photo as { alt: string }).alt}
+                    fill
+                    sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+                    className="object-cover"
+                  />
+                </div>
+                <figcaption className="mt-3 text-sm text-pretty text-muted-foreground">
+                  {caption as string}
+                </figcaption>
+              </figure>
+            </Reveal>
+          ))}
         </div>
       </div>
     </section>
