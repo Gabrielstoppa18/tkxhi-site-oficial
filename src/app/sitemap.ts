@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 import { pillars } from "@/lib/content";
+import { courseHref, courses } from "@/lib/courses";
 import { siteConfig } from "@/lib/site-config";
 
 /** Registre cada rota nova aqui — o sitemap não é gerado automaticamente. */
@@ -18,6 +19,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       lastModified,
       changeFrequency: "monthly" as const,
       priority: 0.8,
+    })),
+    ...courses.map((course) => ({
+      url: `${siteConfig.url}${courseHref(course)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
     })),
   ];
 }
