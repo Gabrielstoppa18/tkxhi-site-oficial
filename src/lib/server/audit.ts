@@ -9,6 +9,7 @@ import { db } from "@/lib/server/db";
  */
 export type AuditAction =
   | "enrollment_created"
+  | "enrollment_superseded"
   | "preference_created"
   | "webhook_received"
   | "webhook_rejected"

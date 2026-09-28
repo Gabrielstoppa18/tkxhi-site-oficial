@@ -9,6 +9,7 @@ import {
   hasApprovedEnrollment,
   PENDING_HOLD_MINUTES,
   seatsTaken,
+  supersedePending,
 } from "@/lib/server/enrollments";
 import { appUrl } from "@/lib/server/env";
 import { createPreference } from "@/lib/server/mercadopago";
@@ -127,6 +128,18 @@ export async function POST(request: Request) {
       "email",
     );
   }
+  // Tentativas anteriores deste e-mail nesta turma ficam substituídas pela
+  // nova — antes de contar vagas, para a própria tentativa antiga não barrar.
+  for (const previous of await supersedePending(cohort.id, email)) {
+    await audit({
+      actor: "sistema",
+      action: "enrollment_superseded",
+      enrollmentId: previous,
+      ip,
+      details: { reason: "nova tentativa de pagamento do mesmo e-mail" },
+    });
+  }
+
   if ((await seatsTaken(cohort.id)) >= cohort.capacity) {
     return fail(
       "As vagas desta turma acabaram. Fale com a gente para entrar na lista de espera.",

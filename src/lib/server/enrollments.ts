@@ -87,14 +87,45 @@ export async function findPaidByEmail(email: string): Promise<Enrollment[]> {
   `;
 }
 
+/**
+ * Lista da turma: pagas, reembolsadas e pendentes ainda dentro da janela de
+ * pagamento. Pendente mais antiga é checkout abandonado — não ocupa vaga e
+ * não aparece. (Se o Mercado Pago aprovar depois, o webhook a traz de volta.)
+ */
 export async function listCohortEnrollments(
   cohortId: string,
 ): Promise<Enrollment[]> {
   return db()<Enrollment[]>`
     SELECT * FROM enrollments
-    WHERE cohort_id = ${cohortId} AND payment_status <> 'cancelled'
+    WHERE cohort_id = ${cohortId}
+      AND (
+        payment_status IN ('approved', 'refunded')
+        OR (
+          payment_status = 'pending'
+          AND created_at > now() - make_interval(mins => ${PENDING_HOLD_MINUTES})
+        )
+      )
     ORDER BY buyer_name
   `;
+}
+
+/**
+ * Nova tentativa de pagamento do mesmo e-mail na mesma turma: as pendentes
+ * anteriores viram `cancelled`. Não apaga nada — se um pagamento antigo for
+ * aprovado mesmo assim, o webhook ainda o reconhece (cancelled → approved).
+ */
+export async function supersedePending(
+  cohortId: string,
+  email: string,
+): Promise<string[]> {
+  const rows = await db()<{ id: string }[]>`
+    UPDATE enrollments SET payment_status = 'cancelled'
+    WHERE cohort_id = ${cohortId}
+      AND lower(buyer_email) = ${email.toLowerCase()}
+      AND payment_status = 'pending'
+    RETURNING id
+  `;
+  return rows.map((row) => row.id);
 }
 
 export async function listManualReviews(): Promise<Enrollment[]> {
