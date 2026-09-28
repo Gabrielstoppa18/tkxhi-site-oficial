@@ -1,8 +1,9 @@
 import Link from "next/link";
-import { Award, Check, Undo2 } from "lucide-react";
+import { Award, Check, MailWarning, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { courseBySlug } from "@/lib/courses";
 import { formatCpf, formatDate, formatTime } from "@/lib/format";
+import { confirmationsSent } from "@/lib/server/audit";
 import { currentCohort, findCohort, listCohorts } from "@/lib/server/cohorts";
 import {
   buyerCpf,
@@ -12,6 +13,7 @@ import {
 import { requireAdmin } from "@/lib/server/session";
 import {
   confirmCheckin,
+  resendConfirmation,
   sendCertificates,
   undoCheckin,
 } from "../_actions/checkin";
@@ -54,6 +56,7 @@ export default async function CheckinPage({
   const enrollments = await listCohortEnrollments(chosen.id);
   const paid = enrollments.filter(isActive);
   const present = paid.filter((item) => item.attendance_confirmed);
+  const confirmed = await confirmationsSent(paid.map((item) => item.id));
 
   return (
     <div>
@@ -100,6 +103,24 @@ export default async function CheckinPage({
           className="mt-4 border-l-2 border-primary pl-3 text-sm"
         >
           Certificado enviado para {query.certificados} aluno(s).
+          {query.falhas && query.falhas !== "0"
+            ? ` ${query.falhas} não saiu — veja a auditoria.`
+            : ""}
+        </p>
+      ) : null}
+
+      {typeof query.confirmacao === "string" ? (
+        <p
+          role={query.confirmacao === "ok" ? "status" : "alert"}
+          className={
+            query.confirmacao === "ok"
+              ? "mt-4 border-l-2 border-primary pl-3 text-sm"
+              : "mt-4 border-l-2 border-destructive pl-3 text-sm text-destructive"
+          }
+        >
+          {query.confirmacao === "ok"
+            ? "E-mail de confirmação reenviado."
+            : "O e-mail não saiu. Veja o motivo em Auditoria (confirmation_email_failed)."}
         </p>
       ) : null}
 
@@ -119,6 +140,29 @@ export default async function CheckinPage({
               <p className="truncate font-mono text-xs text-muted-foreground">
                 {item.buyer_email} · {formatCpf(buyerCpf(item))}
               </p>
+              {isActive(item) ? (
+                <form
+                  action={resendConfirmation}
+                  className="mt-1 flex items-center gap-2 text-xs"
+                >
+                  <input type="hidden" name="enrollmentId" value={item.id} />
+                  {confirmed.has(item.id) ? null : (
+                    <span className="flex items-center gap-1 text-destructive">
+                      <MailWarning aria-hidden className="size-3.5" />
+                      Confirmação não enviada
+                    </span>
+                  )}
+                  <button
+                    type="submit"
+                    className="inline-flex min-h-11 items-center gap-1 text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  >
+                    <Send aria-hidden className="size-3.5" />
+                    {confirmed.has(item.id)
+                      ? "Reenviar confirmação"
+                      : "Enviar confirmação"}
+                  </button>
+                </form>
+              ) : null}
             </div>
             {!isActive(item) ? (
               <span className="font-mono text-xs tracking-wide text-muted-foreground uppercase">

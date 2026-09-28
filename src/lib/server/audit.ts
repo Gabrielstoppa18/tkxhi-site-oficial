@@ -16,6 +16,8 @@ export type AuditAction =
   | "payment_synced"
   | "payment_amount_mismatch"
   | "confirmation_email_sent"
+  | "confirmation_email_failed"
+  | "email_failed"
   | "chargeback_received"
   | "checkin_confirmed"
   | "checkin_undone"
@@ -84,4 +86,18 @@ export async function recentAudit(limit = 200): Promise<AuditEntry[]> {
   return db()<AuditEntry[]>`
     SELECT * FROM audit_log ORDER BY created_at DESC, id DESC LIMIT ${limit}
   `;
+}
+
+/** Matrículas, entre as informadas, cujo e-mail de confirmação já saiu. */
+export async function confirmationsSent(
+  enrollmentIds: string[],
+): Promise<Set<string>> {
+  if (enrollmentIds.length === 0) return new Set();
+  const sql = db();
+  const rows = await sql<{ enrollment_id: string }[]>`
+    SELECT DISTINCT enrollment_id FROM audit_log
+    WHERE action = 'confirmation_email_sent'
+      AND enrollment_id IN ${sql(enrollmentIds)}
+  `;
+  return new Set(rows.map((row) => row.enrollment_id));
 }

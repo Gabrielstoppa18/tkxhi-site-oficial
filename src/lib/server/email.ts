@@ -9,7 +9,7 @@ import {
   formatDateTime,
   formatTime,
 } from "@/lib/format";
-import type { AuditEntry } from "@/lib/server/audit";
+import { audit, type AuditEntry } from "@/lib/server/audit";
 import { buyerCpf, type Enrollment } from "@/lib/server/enrollments";
 import { appUrl, env } from "@/lib/server/env";
 import { createRefundToken } from "@/lib/server/tokens";
@@ -69,6 +69,32 @@ async function send(message: {
   }
 }
 
+/**
+ * Envio de aviso (reembolso, alerta, certificado): nunca lança. Um e-mail que
+ * não sai não pode desfazer o que já aconteceu — um reembolso processado não
+ * vira "reembolso falhou" porque o Resend recusou a mensagem. A falha fica na
+ * auditoria e quem chamou recebe `false`.
+ */
+async function trySend(message: Parameters<typeof send>[0]): Promise<boolean> {
+  try {
+    await send(message);
+    return true;
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    console.error("Falha ao enviar e-mail", message.subject, detail);
+    await audit({
+      actor: "sistema",
+      action: "email_failed",
+      details: {
+        subject: message.subject,
+        to: message.to,
+        error: detail.slice(0, 500),
+      },
+    }).catch(() => {});
+    return false;
+  }
+}
+
 function escape(value: string): string {
   return value
     .replace(/&/g, "&amp;")
@@ -112,6 +138,8 @@ export async function sendEnrollmentConfirmation(
   enrollment: Enrollment,
   course: Course,
   cohort: Cohort,
+  /** Muda a cada tentativa: o Resend guarda a resposta de uma chave, inclusive a de erro. */
+  idempotencyKey = `confirmation-${enrollment.id}`,
 ): Promise<void> {
   const checkinUrl = `${appUrl()}/admin/checkin/${enrollment.checkin_token}`;
   const qr = await QRCode.toBuffer(checkinUrl, { width: 480, margin: 2 });
@@ -133,7 +161,7 @@ export async function sendEnrollmentConfirmation(
   await send({
     to: enrollment.buyer_email,
     subject: `Matrícula confirmada — ${course.title}`,
-    idempotencyKey: `confirmation-${enrollment.id}`,
+    idempotencyKey,
     text,
     attachments: [{ filename: "checkin-tkxhi.png", content: qr }],
     html: layout(
@@ -156,13 +184,13 @@ export async function sendEnrollmentConfirmation(
 export async function sendRefundLinks(
   email: string,
   items: { enrollment: Enrollment; course: Course | undefined }[],
-): Promise<void> {
+): Promise<boolean> {
   const lines = items.map(({ enrollment, course }) => ({
     label: `${course?.title ?? enrollment.course_id} — matrícula de ${formatDateTime(enrollment.created_at)}`,
     href: refundLinkFor(enrollment.id),
   }));
 
-  await send({
+  return trySend({
     to: email,
     subject: "Seu link para pedir reembolso",
     text: [
@@ -197,7 +225,7 @@ export async function sendRefundOutcome(
   enrollment: Enrollment,
   course: Course | undefined,
   outcome: RefundOutcome,
-): Promise<void> {
+): Promise<boolean> {
   const title = course?.title ?? enrollment.course_id;
   const content =
     outcome.kind === "refunded"
@@ -228,7 +256,7 @@ export async function sendRefundOutcome(
             ],
           };
 
-  await send({
+  return trySend({
     to: enrollment.buyer_email,
     subject: content.subject,
     text: [`Olá, ${enrollment.buyer_name}!`, ...content.lines].join("\n\n"),
@@ -290,10 +318,10 @@ export async function sendAdminAlert(input: {
   enrollment: Enrollment;
   course: Course | undefined;
   trail: AuditEntry[];
-}): Promise<void> {
+}): Promise<boolean> {
   const dossier = evidenceDossier(input.enrollment, input.course, input.trail);
   const panel = `${appUrl()}/admin/reembolsos`;
-  await send({
+  return trySend({
     to: env.adminNotifyEmails(),
     subject: input.subject,
     text: `${input.intro}\n\nDecida no painel: ${panel}\n\n${dossier}`,
@@ -309,9 +337,9 @@ export async function sendAdminAlert(input: {
 export async function sendCertificate(
   enrollment: Enrollment,
   course: Course,
-): Promise<void> {
+): Promise<boolean> {
   const href = certificateLinkFor(enrollment);
-  await send({
+  return trySend({
     to: enrollment.buyer_email,
     subject: `Seu certificado — ${course.title}`,
     idempotencyKey: `certificate-${enrollment.id}`,

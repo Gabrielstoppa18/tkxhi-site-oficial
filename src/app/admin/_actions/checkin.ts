@@ -8,7 +8,13 @@ import { audit } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
 import { db } from "@/lib/server/db";
 import { sendCertificate } from "@/lib/server/email";
-import { isUuid, type Enrollment } from "@/lib/server/enrollments";
+import {
+  findEnrollment,
+  isActive,
+  isUuid,
+  type Enrollment,
+} from "@/lib/server/enrollments";
+import { ensureConfirmationSent } from "@/lib/server/payments";
 import { clientIp } from "@/lib/server/request";
 import { requireAdmin } from "@/lib/server/session";
 
@@ -88,8 +94,10 @@ export async function sendCertificates(formData: FormData) {
       AND payment_status = 'approved'
       AND refund_status NOT IN ('auto_approved', 'approved')
   `;
+  let sent = 0;
   for (const enrollment of attended) {
-    await sendCertificate(enrollment, course);
+    if (!(await sendCertificate(enrollment, course))) continue;
+    sent++;
     await audit({
       actor: principal.actor,
       action: "certificate_email_sent",
@@ -97,5 +105,22 @@ export async function sendCertificates(formData: FormData) {
       details: { to: enrollment.buyer_email },
     });
   }
-  redirect(`/admin/checkin?turma=${cohort.id}&certificados=${attended.length}`);
+  redirect(
+    `/admin/checkin?turma=${cohort.id}&certificados=${sent}&falhas=${attended.length - sent}`,
+  );
+}
+
+/** Reenvia o e-mail com data, local e QR code — para quem não recebeu. */
+export async function resendConfirmation(formData: FormData) {
+  const principal = await requireAdmin();
+  const enrollment = await findEnrollment(uuidFrom(formData, "enrollmentId"));
+  if (!enrollment || !isActive(enrollment)) {
+    throw new Error("Matrícula sem pagamento ativo.");
+  }
+  const result = await ensureConfirmationSent(enrollment, principal.actor, {
+    force: true,
+  });
+  redirect(
+    `/admin/checkin?turma=${enrollment.cohort_id}&confirmacao=${result === "sent" ? "ok" : "falha"}`,
+  );
 }

@@ -135,28 +135,71 @@ export async function syncPayment(
     });
   }
 
-  if (!updated) return enrollment;
+  const current = updated ?? enrollment;
 
   // A vaga mudou de dono: a página do curso precisa mostrar "esgotada" logo.
-  if (course && updated.previous_status !== next) {
+  if (course && updated && updated.previous_status !== next) {
     revalidatePath(courseHref(course));
   }
 
-  const cohort = await findCohort(updated.cohort_id);
-  if (
-    updated.previous_status !== "approved" &&
-    next === "approved" &&
-    course &&
-    cohort
-  ) {
-    await sendEnrollmentConfirmation(updated, course, cohort);
-    await audit({
-      actor: "sistema",
-      action: "confirmation_email_sent",
-      enrollmentId: updated.id,
-      details: { to: updated.buyer_email },
-    });
+  // Não só na transição: se um envio anterior falhou, cada nova notificação
+  // (ou visita à página de retorno) tenta de novo até a confirmação sair.
+  if (current.payment_status === "approved") {
+    await ensureConfirmationSent(current, "sistema");
   }
 
-  return updated;
+  return current;
+}
+
+/**
+ * Manda o e-mail de confirmação com o QR code, se ainda não saiu. Falha de
+ * e-mail nunca derruba quem chamou: o pagamento já está registrado, e a
+ * falha fica na auditoria para o painel mostrar e reenviar.
+ *
+ * `force` reenvia mesmo que já tenha saído (botão do painel).
+ */
+export async function ensureConfirmationSent(
+  enrollment: Enrollment,
+  actor: string,
+  { force = false }: { force?: boolean } = {},
+): Promise<"sent" | "already_sent" | "failed"> {
+  const [history] = await db()<{ sent: number; failed: number }[]>`
+    SELECT
+      count(*) FILTER (WHERE action = 'confirmation_email_sent')::int AS sent,
+      count(*) FILTER (WHERE action = 'confirmation_email_failed')::int AS failed
+    FROM audit_log WHERE enrollment_id = ${enrollment.id}
+  `;
+  if (history.sent > 0 && !force) return "already_sent";
+
+  const course = courseBySlug(enrollment.course_id);
+  const cohort = await findCohort(enrollment.cohort_id);
+  if (!course || !cohort) return "failed";
+
+  try {
+    // Chave por tentativa: duas notificações simultâneas não duplicam o
+    // e-mail, e uma tentativa nova não reaproveita a resposta de erro.
+    await sendEnrollmentConfirmation(
+      enrollment,
+      course,
+      cohort,
+      `confirmation-${enrollment.id}-${history.sent}-${history.failed}`,
+    );
+    await audit({
+      actor,
+      action: "confirmation_email_sent",
+      enrollmentId: enrollment.id,
+      details: { to: enrollment.buyer_email, resend: history.sent > 0 },
+    });
+    return "sent";
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error("Falha ao enviar confirmação", enrollment.id, message);
+    await audit({
+      actor,
+      action: "confirmation_email_failed",
+      enrollmentId: enrollment.id,
+      details: { to: enrollment.buyer_email, error: message.slice(0, 500) },
+    });
+    return "failed";
+  }
 }
