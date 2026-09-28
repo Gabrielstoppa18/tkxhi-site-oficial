@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courses } from "@/lib/courses";
+import { listCourses } from "@/lib/server/courses";
 import { brasiliaInputParts } from "@/lib/format";
 import { findCohort } from "@/lib/server/cohorts";
 import { requireAdmin } from "@/lib/server/session";
@@ -18,6 +18,7 @@ export default async function EditCohortPage({
   const query = await searchParams;
   const cohort = await findCohort(id);
   if (!cohort) notFound();
+  const courses = await listCourses();
 
   const start = brasiliaInputParts(cohort.startsAt);
   const end = brasiliaInputParts(cohort.endsAt);

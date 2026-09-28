@@ -1,11 +1,113 @@
-import { Bolt, Factory, Layers, Scissors, type LucideIcon } from "lucide-react";
+import {
+  Bolt,
+  BookOpen,
+  Bot,
+  Box,
+  Code,
+  Cpu,
+  Factory,
+  FlaskConical,
+  Layers,
+  Lightbulb,
+  Palette,
+  Printer,
+  Ruler,
+  Scissors,
+  Settings,
+  Wrench,
+  type LucideIcon,
+} from "lucide-react";
+import type { PhotoKey } from "@/lib/photos";
 
 /**
- * Cursos presenciais: o conteúdo (programa, textos) fica no código, porque
- * muda pouco e passa por revisão como qualquer texto do site. As turmas —
- * data, local, preço, vagas e política de reembolso — ficam no banco e são
- * gerenciadas em /admin/turmas.
+ * Cursos presenciais e suas turmas. Os dois ficam no banco: o curso (textos,
+ * programa, materiais) é gerenciado em /admin/cursos e a turma (data, local,
+ * preço, vagas, política de reembolso) em /admin/turmas.
+ *
+ * Este arquivo só tem tipos e tabelas fixas — é importado também pelo
+ * navegador. A leitura do banco está em src/lib/server/courses.ts.
  */
+
+export type CoursePillar = "engenharia" | "impressao-3d" | "editora";
+export type CourseStatus = "draft" | "published" | "archived";
+
+/**
+ * Cada curso pertence a uma frente e herda cor e textura dela — o mesmo
+ * sistema das páginas internas (ver CLAUDE.md, "Sistema visual").
+ */
+export const COURSE_PILLARS: Record<
+  CoursePillar,
+  { label: string; colorClass: string; material: string; href: string }
+> = {
+  engenharia: {
+    label: "Engenharia",
+    colorClass: "pillar-engenharia",
+    material: "material-draft",
+    href: "/engenharia",
+  },
+  "impressao-3d": {
+    label: "Impressão 3D",
+    colorClass: "pillar-impressao-3d",
+    material: "material-layered",
+    href: "/impressao-3d",
+  },
+  editora: {
+    label: "Editora",
+    colorClass: "pillar-editora",
+    material: "material-halftone",
+    href: "/editora",
+  },
+};
+
+/** Ícones disponíveis para os módulos. O banco guarda só a chave. */
+export const COURSE_ICONS = {
+  factory: { icon: Factory, label: "Fábrica" },
+  bolt: { icon: Bolt, label: "Manutenção" },
+  layers: { icon: Layers, label: "Camadas" },
+  scissors: { icon: Scissors, label: "Fatiamento" },
+  printer: { icon: Printer, label: "Impressora" },
+  cpu: { icon: Cpu, label: "Eletrônica" },
+  bot: { icon: Bot, label: "Robótica" },
+  code: { icon: Code, label: "Programação" },
+  wrench: { icon: Wrench, label: "Ferramentas" },
+  settings: { icon: Settings, label: "Configuração" },
+  ruler: { icon: Ruler, label: "Projeto" },
+  box: { icon: Box, label: "Peça" },
+  lightbulb: { icon: Lightbulb, label: "Ideia" },
+  flask: { icon: FlaskConical, label: "Experimento" },
+  palette: { icon: Palette, label: "Design" },
+  book: { icon: BookOpen, label: "Leitura" },
+} satisfies Record<string, { icon: LucideIcon; label: string }>;
+
+export type CourseIconKey = keyof typeof COURSE_ICONS;
+
+export function isCourseIcon(value: string): value is CourseIconKey {
+  return Object.hasOwn(COURSE_ICONS, value);
+}
+
+export type CourseModule = {
+  title: string;
+  description: string;
+  icon: CourseIconKey;
+};
+
+export type Course = {
+  slug: string;
+  pillar: CoursePillar;
+  title: string;
+  edition: string;
+  tagline: string;
+  lead: string;
+  authors: string;
+  modules: CourseModule[];
+  materials: string[];
+  software: string[];
+  requirements: string;
+  photo: PhotoKey;
+  status: CourseStatus;
+  position: number;
+};
+
 export type CohortStatus = "draft" | "open" | "closed" | "cancelled";
 
 /** Turma como a interface a enxerga: datas em ISO, serializável para o navegador. */
@@ -23,79 +125,6 @@ export type Cohort = {
   lateRefundDaysBefore: number;
   status: CohortStatus;
 };
-
-/**
- * Política padrão para turma nova. Fora dos 7 dias do direito de
- * arrependimento: quem não participou e pede com antecedência recebe a
- * porcentagem de volta automaticamente. Cada turma pode mudar os números.
- */
-export const DEFAULT_REFUND_POLICY = {
-  lateRefundPercent: 50,
-  lateRefundDaysBefore: 3,
-} as const;
-
-export type CourseModule = {
-  title: string;
-  description: string;
-  icon: LucideIcon;
-};
-
-export type Course = {
-  slug: string;
-  title: string;
-  edition: string;
-  tagline: string;
-  lead: string;
-  authors: string;
-  modules: CourseModule[];
-  materials: string[];
-  software: string[];
-  requirements: string;
-};
-
-export const courses: Course[] = [
-  {
-    slug: "impressao-3d-basic",
-    title: "Impressão 3D: Basic",
-    edition: "2026",
-    tagline: "Pense, prepare, imprima!",
-    lead: "Os fundamentos da manufatura aditiva, da anatomia da impressora ao fatiamento, para transformar uma ideia em peça na mesa.",
-    authors: "G. P. Stoppa & M. H. Stoppa",
-    modules: [
-      {
-        title: "Introdução",
-        description:
-          "História, tecnologias (FDM, SLA, SLS), o projeto RepRap e a anatomia da impressora Ender 3.",
-        icon: Factory,
-      },
-      {
-        title: "Manutenção",
-        description:
-          "Preservação, limpeza, lubrificação, troca de filamento e solução de falhas comuns como warping e stringing.",
-        icon: Bolt,
-      },
-      {
-        title: "Configuração",
-        description:
-          "Painel de controle, pré-aquecimento, nivelamento da mesa e a distância correta do bico.",
-        icon: Layers,
-      },
-      {
-        title: "Fatiamento",
-        description:
-          "OrcaSlicer na prática: parâmetros de qualidade e resistência, suportes e calibração.",
-        icon: Scissors,
-      },
-    ],
-    materials: ["PLA (foco prático)", "ABS", "PETG", "TPU"],
-    software: ["OrcaSlicer (foco principal)", "Cura", "PrusaSlicer"],
-    requirements: "Notebook que rode o OrcaSlicer.",
-  },
-];
-
-export function courseBySlug(slug: string): Course | undefined {
-  return courses.find((course) => course.slug === slug);
-}
 
 export function courseHref(course: Pick<Course, "slug">): string {
   return `/cursos/${course.slug}`;

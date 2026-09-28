@@ -3,7 +3,12 @@ import { CircuitField } from "@/components/circuit-field";
 import { Reveal } from "@/components/motion/reveal";
 import { PhotoPlate } from "@/components/photo-plate";
 import { Button } from "@/components/ui/button";
-import { cohortHours, type Cohort, type Course } from "@/lib/courses";
+import {
+  cohortHours,
+  COURSE_PILLARS,
+  type Cohort,
+  type Course,
+} from "@/lib/courses";
 import { formatBRL, formatDate, formatTime } from "@/lib/format";
 import { photos } from "@/lib/photos";
 
@@ -74,9 +79,9 @@ export function CourseHero({
 
         <Reveal delay={0.1} className="lg:col-span-5">
           <PhotoPlate
-            src={photos.turtleSensor.src}
-            alt={photos.turtleSensor.alt}
-            annotation="Matéria · peças impressas na TkxHi"
+            src={photos[course.photo].src}
+            alt={photos[course.photo].alt}
+            annotation={`${COURSE_PILLARS[course.pillar].label} · ${course.title}`}
             priority
           />
         </Reveal>

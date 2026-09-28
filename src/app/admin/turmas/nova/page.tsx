@@ -1,9 +1,27 @@
-import { courses, DEFAULT_REFUND_POLICY } from "@/lib/courses";
+import Link from "next/link";
+import { listCourses } from "@/lib/server/courses";
 import { requireAdmin } from "@/lib/server/session";
 import { CohortForm } from "../cohort-form";
 
 export default async function NewCohortPage() {
   await requireAdmin("/admin/turmas/nova");
+  // Turma só para curso ativo; arquivado não recebe turma nova.
+  const courses = (await listCourses()).filter(
+    (course) => course.status !== "archived",
+  );
+  if (courses.length === 0) {
+    return (
+      <p className="text-muted-foreground">
+        Cadastre um curso antes de criar a turma.{" "}
+        <Link
+          href="/admin/cursos/novo"
+          className="underline underline-offset-4"
+        >
+          Novo curso
+        </Link>
+      </p>
+    );
+  }
 
   return (
     <div>
@@ -27,10 +45,8 @@ export default async function NewCohortPage() {
             address: "",
             price: "",
             capacity: "12",
-            lateRefundPercent: String(DEFAULT_REFUND_POLICY.lateRefundPercent),
-            lateRefundDaysBefore: String(
-              DEFAULT_REFUND_POLICY.lateRefundDaysBefore,
-            ),
+            lateRefundPercent: "",
+            lateRefundDaysBefore: "",
             status: "draft",
           }}
         />

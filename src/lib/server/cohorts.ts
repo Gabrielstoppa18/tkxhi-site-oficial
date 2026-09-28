@@ -1,5 +1,6 @@
 import "server-only";
-import { courseBySlug, type Cohort, type CohortStatus } from "@/lib/courses";
+import { type Cohort, type CohortStatus } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { audit } from "@/lib/server/audit";
 import { db } from "@/lib/server/db";
 import { PENDING_HOLD_MINUTES } from "@/lib/server/enrollments";
@@ -97,9 +98,9 @@ export async function listOpenCohorts(
  */
 export type CohortInput = Omit<Cohort, "id">;
 
-export function parseCohortForm(
+export async function parseCohortForm(
   form: FormData,
-): { ok: true; value: CohortInput } | { ok: false; error: string } {
+): Promise<{ ok: true; value: CohortInput } | { ok: false; error: string }> {
   const text = (name: string, max = 200) =>
     String(form.get(name) ?? "")
       .trim()
@@ -110,7 +111,9 @@ export function parseCohortForm(
   };
 
   const courseId = text("courseId", 80);
-  if (!courseBySlug(courseId)) return { ok: false, error: "Curso inválido." };
+  if (!(await findCourse(courseId))) {
+    return { ok: false, error: "Curso inválido." };
+  }
 
   const date = text("date", 10);
   const start = text("startTime", 5);
@@ -337,4 +340,28 @@ export function currentCohort<T extends Cohort>(cohorts: T[]): T | undefined {
       (a, b) => Date.parse(b.startsAt) - Date.parse(a.startsAt),
     )[0]
   );
+}
+
+/**
+ * Próxima turma aberta de cada curso, para catálogo e destaques. Tolerante
+ * como publicCohorts: sem banco, devolve mapa vazio.
+ */
+export async function nextOpenCohorts(): Promise<Map<string, CohortWithSeats>> {
+  if (!process.env.DATABASE_URL) return new Map();
+  try {
+    const sql = db();
+    const rows = await sql<Row[]>`
+      SELECT DISTINCT ON (c.course_id) c.*, ${sql.unsafe(SEATS("c"))}
+      FROM cohorts c
+      WHERE c.status = 'open' AND c.starts_at > now()
+      ORDER BY c.course_id, c.starts_at
+    `;
+    return new Map(rows.map((row) => [row.course_id, withSeats(row)]));
+  } catch (error) {
+    console.warn(
+      "Turmas indisponíveis",
+      error instanceof Error ? error.message : error,
+    );
+    return new Map();
+  }
 }

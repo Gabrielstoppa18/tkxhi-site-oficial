@@ -1,9 +1,10 @@
-# Cursos: turmas, matrícula, check-in, reembolso e certificado
+# Cursos: catálogo, turmas, matrícula, check-in, reembolso e certificado
 
-Fluxo completo da venda de cursos presenciais, do cadastro da turma ao
+Fluxo completo da venda de cursos presenciais, do cadastro do curso ao
 certificado, e o modelo de segurança que o protege.
 
 ```
+/admin/cursos ──► curso "publicado" ──► /cursos (catálogo), home e página da frente
 /admin/turmas ──► turma "aberta" ──► /cursos/[slug] (ciência + escolha da turma)
                                           │
                      POST /api/checkout/create-preference ──► Mercado Pago
@@ -41,8 +42,11 @@ certificado, e o modelo de segurança que o protege.
    - em **Usuários**, crie os demais admins. Cada um recebe uma senha
      temporária, mostrada uma única vez, e no primeiro acesso é obrigado a
      trocá-la e a ativar o 2FA;
-   - em **Turmas**, cadastre a turma como rascunho, confira e mude para
-     "aberta". A página do curso passa a mostrar o formulário na hora.
+   - em **Cursos**, confira o "Impressão 3D: Basic" (a migração já o cadastra)
+     ou crie um curso novo, como rascunho, e publique;
+   - em **Turmas**, cadastre a turma como rascunho — com a **política de
+     reembolso dela** —, confira e mude para "aberta". A página do curso passa
+     a mostrar o formulário na hora.
 6. **Mercado Pago**: em _Suas integrações → sua aplicação → Webhooks_,
    cadastre `https://tkxhi.com/api/webhooks/mercadopago` com o evento
    **Pagamentos** e copie a assinatura secreta para `MP_WEBHOOK_SECRET`.
@@ -160,6 +164,22 @@ Ao subir, o servidor avisa no log quais estão faltando (só os nomes).
 - A segurança do banco e das contas externas depende do provedor e do 2FA
   nessas contas.
 
+## Cursos
+
+- O curso guarda o conteúdo: nome, chamada, descrição, instrutores, módulos
+  (com ícone), materiais, software, o que trazer e a foto de abertura (uma das
+  fotos de `src/lib/photos.ts`).
+- Cada curso pertence a uma **frente** e herda a cor e a textura dela. A
+  página da frente mostra os cursos dela; sem curso, a seção não aparece.
+- **Rascunho** não aparece no site; **publicado** entra no catálogo `/cursos`,
+  na home e na página da frente; **arquivado** sai do catálogo e da busca, mas
+  a página continua no ar para links antigos.
+- O **endereço** (`/cursos/<endereço>`) é gerado do nome e **não muda** depois
+  de criado: turmas, matrículas e certificados apontam para ele.
+- Só rascunho sem turma pode ser apagado. Curso com turma aberta não pode ser
+  despublicado antes de fechar as vendas.
+- Campo vazio (materiais, software, o que trazer) não aparece na página.
+
 ## Turmas
 
 - **Rascunho** não aparece no site; **aberta** vende; **fechada** para de
@@ -168,6 +188,10 @@ Ao subir, o servidor avisa no log quais estão faltando (só os nomes).
   não troca de curso.
 - **Quem já comprou mantém o preço e a política de reembolso da compra.** A
   data da turma é a atual: se remarcar, o prazo de reembolso acompanha.
+- **A política de reembolso é definida em cada turma** (porcentagem e
+  antecedência para quem desiste depois dos 7 dias). O formulário de turma
+  nova vem com esses campos vazios, para ser uma decisão consciente, e os
+  números entram no texto que o aluno aceita.
 - Remarcar a data ou trocar o local **não avisa os alunos** automaticamente.
 - Horários são de Brasília (UTC−3, sem horário de verão).
 - A página do curso é estática e é refeita quando uma turma muda ou uma vaga
@@ -186,6 +210,25 @@ pessoas.
 | depois de 7 dias, sem check-in, com antecedência | reembolso parcial (% da turma)       |
 | qualquer outro caso, ou turma com 0%             | análise manual                       |
 | reembolso automático recusado pelo Mercado Pago  | análise manual, com o erro anexado   |
+
+## Matrícula repetida
+
+A chave é **e-mail + nome do aluno** (sem diferenciar maiúsculas, acentos e
+espaços extras). Um responsável pode matricular dois filhos com o próprio
+e-mail; o mesmo aluno não paga duas vezes por engano. Uma nova tentativa de
+pagamento do mesmo aluno cancela as tentativas pendentes anteriores dele — só
+dele, não dos irmãos.
+
+## Privacidade
+
+`/politica-de-privacidade` descreve o que o sistema de fato faz: dados
+coletados, finalidades e bases legais, fornecedores (Mercado Pago, Resend,
+Vercel, Supabase), retenção de até 5 anos após a turma e os direitos da LGPD.
+O texto de ciência cita a política, e o formulário tem o link. Ao mudar
+coleta, armazenamento ou fornecedor, atualize a página e a data dela.
+
+A eliminação ao fim dos 5 anos e os pedidos de titulares (acesso, correção,
+exclusão) ainda são **manuais**: não há rotina automática.
 
 ## Decisões que fogem do pedido original
 

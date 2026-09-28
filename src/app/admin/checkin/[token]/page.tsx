@@ -2,7 +2,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { AlertTriangle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { formatDateTime } from "@/lib/format";
 import { findByCheckinToken, isActive } from "@/lib/server/enrollments";
 import { requireAdmin } from "@/lib/server/session";
@@ -33,7 +33,7 @@ export default async function CheckinTokenPage({
     );
   }
 
-  const course = courseBySlug(enrollment.course_id);
+  const course = await findCourse(enrollment.course_id);
 
   if (!isActive(enrollment)) {
     return (

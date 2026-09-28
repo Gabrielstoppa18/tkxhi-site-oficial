@@ -2,7 +2,7 @@
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { audit } from "@/lib/server/audit";
 import { db } from "@/lib/server/db";
 import { sendRefundLinks } from "@/lib/server/email";
@@ -67,10 +67,12 @@ export async function requestRefundLink(formData: FormData) {
     if (toSend.length > 0) {
       await sendRefundLinks(
         toSend[0].buyer_email,
-        toSend.map((enrollment) => ({
-          enrollment,
-          course: courseBySlug(enrollment.course_id),
-        })),
+        await Promise.all(
+          toSend.map(async (enrollment) => ({
+            enrollment,
+            course: await findCourse(enrollment.course_id),
+          })),
+        ),
       );
       for (const enrollment of toSend) {
         await audit({

@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { courseBySlug } from "@/lib/courses";
+import { courseTitles, findCourse } from "@/lib/server/courses";
 import { formatBRL } from "@/lib/format";
 import { auditTrail } from "@/lib/server/audit";
 import { evidenceDossier } from "@/lib/server/email";
@@ -19,13 +19,14 @@ export default async function RefundsPage({
   searchParams,
 }: PageProps<"/admin/reembolsos">) {
   await requireAdmin("/admin/reembolsos");
+  const titles = await courseTitles();
   const query = await searchParams;
   const reviews = await listManualReviews();
   const dossiers = await Promise.all(
     reviews.map(async (item) =>
       evidenceDossier(
         item,
-        courseBySlug(item.course_id),
+        await findCourse(item.course_id),
         await auditTrail(item.id),
         { fullCpf: true },
       ),
@@ -68,7 +69,7 @@ export default async function RefundsPage({
           <article key={item.id} className="border-t border-border pt-6">
             <h2 className="text-xl font-bold">{item.buyer_name}</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              {courseBySlug(item.course_id)?.title ?? item.course_id} ·{" "}
+              {titles.get(item.course_id) ?? item.course_id} ·{" "}
               {formatBRL(item.amount_cents)} · motivo da análise:{" "}
               {item.refund_note}
             </p>

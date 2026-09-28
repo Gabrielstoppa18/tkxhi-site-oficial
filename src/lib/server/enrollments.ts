@@ -117,15 +117,40 @@ export async function listCohortEnrollments(
 export async function supersedePending(
   cohortId: string,
   email: string,
+  name: string,
 ): Promise<string[]> {
-  const rows = await db()<{ id: string }[]>`
-    UPDATE enrollments SET payment_status = 'cancelled'
+  const candidates = await db()<{ id: string; buyer_name: string }[]>`
+    SELECT id, buyer_name FROM enrollments
     WHERE cohort_id = ${cohortId}
       AND lower(buyer_email) = ${email.toLowerCase()}
       AND payment_status = 'pending'
-    RETURNING id
   `;
-  return rows.map((row) => row.id);
+  // Só as tentativas do mesmo aluno: a de um irmão com o mesmo e-mail fica.
+  const ids = candidates
+    .filter((row) => samePerson(row.buyer_name, name))
+    .map((row) => row.id);
+  if (ids.length === 0) return [];
+  await db()`
+    UPDATE enrollments SET payment_status = 'cancelled'
+    WHERE id IN ${db()(ids)} AND payment_status = 'pending'
+  `;
+  return ids;
+}
+
+/**
+ * Mesmo aluno: nome igual ignorando maiúsculas, acentos e espaços extras.
+ * "João  da Silva" e "joao da silva" são a mesma pessoa; "Ana Silva" e
+ * "Pedro Silva" com o mesmo e-mail são dois filhos do mesmo responsável.
+ */
+export function samePerson(a: string, b: string): boolean {
+  const key = (value: string) =>
+    value
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\s+/g, " ")
+      .trim();
+  return key(a) === key(b);
 }
 
 export async function listManualReviews(): Promise<Enrollment[]> {
@@ -152,19 +177,24 @@ export async function seatsTaken(cohortId: string): Promise<number> {
   return row.count;
 }
 
+/**
+ * Já existe matrícula paga deste aluno nesta turma? A chave é e-mail + nome:
+ * um responsável pode matricular dois filhos com o próprio e-mail, mas o
+ * mesmo aluno não paga duas vezes por engano.
+ */
 export async function hasApprovedEnrollment(
   cohortId: string,
   email: string,
+  name: string,
 ): Promise<boolean> {
-  const [row] = await db()`
-    SELECT 1 FROM enrollments
+  const rows = await db()<{ buyer_name: string }[]>`
+    SELECT buyer_name FROM enrollments
     WHERE cohort_id = ${cohortId}
       AND lower(buyer_email) = ${email.toLowerCase()}
       AND payment_status = 'approved'
       AND refund_status NOT IN ('auto_approved', 'approved')
-    LIMIT 1
   `;
-  return Boolean(row);
+  return rows.some((row) => samePerson(row.buyer_name, name));
 }
 
 /** Matrícula ativa: paga e sem reembolso concedido (nem parcial). */

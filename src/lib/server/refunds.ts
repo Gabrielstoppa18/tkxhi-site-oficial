@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { courseBySlug, courseHref } from "@/lib/courses";
+import { courseHref } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { decideRefund, type RefundDecision } from "@/lib/refund-policy";
 import { audit, auditTrail } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
@@ -37,8 +38,8 @@ export async function refundDecisionFor(
 }
 
 /** Reembolso concedido libera a vaga: a página do curso volta a mostrá-la. */
-function releaseSeat(courseId: string) {
-  const course = courseBySlug(courseId);
+async function releaseSeat(courseId: string) {
+  const course = await findCourse(courseId);
   if (course) revalidatePath(courseHref(course));
 }
 
@@ -65,7 +66,7 @@ async function sendToReview(
     enrollmentId: enrollment.id,
     details: { reason },
   });
-  const course = courseBySlug(enrollment.course_id);
+  const course = await findCourse(enrollment.course_id);
   await sendAdminAlert({
     subject: `Reembolso para analisar — ${enrollment.buyer_name}`,
     intro,
@@ -102,7 +103,7 @@ export async function requestRefund(
       : { kind: "not_eligible" };
   }
 
-  const course = courseBySlug(locked.course_id);
+  const course = await findCourse(locked.course_id);
   const decision = await refundDecisionFor(locked);
 
   await audit({
@@ -146,7 +147,7 @@ export async function requestRefund(
       WHERE id = ${locked.id}
       RETURNING *
     `;
-    releaseSeat(locked.course_id);
+    await releaseSeat(locked.course_id);
     await audit({
       actor: "sistema",
       action: "refund_auto_processed",
@@ -219,14 +220,14 @@ export async function approveManualRefund(
       WHERE id = ${locked.id}
       RETURNING *
     `;
-    releaseSeat(locked.course_id);
+    await releaseSeat(locked.course_id);
     await audit({
       actor,
       action: "refund_manual_approved",
       enrollmentId: locked.id,
       details: { amountCents, refundId: refund.id, note },
     });
-    await sendRefundOutcome(updated, courseBySlug(updated.course_id), {
+    await sendRefundOutcome(updated, await findCourse(updated.course_id), {
       kind: "refunded",
       amountCents,
     });
@@ -269,7 +270,7 @@ export async function denyRefund(
     enrollmentId,
     details: { note },
   });
-  await sendRefundOutcome(updated, courseBySlug(updated.course_id), {
+  await sendRefundOutcome(updated, await findCourse(updated.course_id), {
     kind: "denied",
     note,
   });

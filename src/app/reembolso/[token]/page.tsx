@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { findEnrollment } from "@/lib/server/enrollments";
 import { findCohort } from "@/lib/server/cohorts";
@@ -37,7 +37,7 @@ export default async function RefundRequestPage({
 
   const enrollment = await findEnrollment(enrollmentId);
   if (!enrollment) redirect("/reembolso?expirado=1");
-  const course = courseBySlug(enrollment.course_id);
+  const course = await findCourse(enrollment.course_id);
 
   // Prévia honesta do que vai acontecer — a decisão real é refeita no servidor
   // no momento do pedido.

@@ -101,7 +101,7 @@ Fundo padrão: violeta quase preto `#190630`, derivado de `#250469` e `#350049`.
 
 Venda de cursos presenciais com Mercado Pago (Checkout Pro), Postgres e Resend, mais o painel `/admin`. Fluxo, variáveis, rotação de segredos e modelo de segurança estão em **`docs/cursos.md`**. Regras que não se quebram:
 
-- **Código de servidor fica em `src/lib/server/`**, sempre com `import "server-only"`. O conteúdo dos cursos (programa, textos) fica em `src/lib/courses.ts`; as **turmas** (data, local, preço, vagas, política) ficam no banco e são gerenciadas em `/admin/turmas`.
+- **Código de servidor fica em `src/lib/server/`**, sempre com `import "server-only"`. **Cursos** (conteúdo) e **turmas** (data, local, preço, vagas, política de reembolso) ficam no banco e são gerenciados em `/admin/cursos` e `/admin/turmas`. `src/lib/courses.ts` tem só tipos, ícones e o estilo de cada frente — é importado pelo navegador. Páginas públicas leem com as funções tolerantes (`publishedCourses`, `publicCourse`, `publicCohorts`): sem banco, a página cai em "em breve", nunca em erro.
 - **Segredo nenhum com prefixo `NEXT_PUBLIC_`.** Variável nova passa por `src/lib/server/env.ts` (com validação) e entra em `env.template` e `docs/cursos.md`. O `.env` é gerado por `npm run setup`; nunca escreva segredo em código, log ou mensagem.
 - **Cripto só por `src/lib/server/crypto.ts`**: HMAC com chave derivada por finalidade, AES-256-GCM com contexto (AAD). Nada de `createHmac` ou `createCipheriv` solto. Dado pessoal novo (documento, telefone) entra cifrado.
 - **Toda página e server action do painel começa com `requireAdmin()`** (ou `requireMaster()` para gestão de usuários). O layout de `/admin` não protege nada.

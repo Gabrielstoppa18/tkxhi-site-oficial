@@ -209,6 +209,17 @@ export function EnrollmentForm({
             Li e estou ciente das condições acima.
           </label>
         </div>
+        <p className="mt-3 pl-8 text-xs text-muted-foreground">
+          <a
+            href="/politica-de-privacidade"
+            target="_blank"
+            rel="noopener"
+            className="underline underline-offset-4 hover:text-foreground"
+          >
+            Ler a Política de Privacidade
+          </a>{" "}
+          (abre em outra aba)
+        </p>
       </fieldset>
 
       {error ? (

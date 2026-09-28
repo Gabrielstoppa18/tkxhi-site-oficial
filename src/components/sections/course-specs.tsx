@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/section-heading";
 import type { Course } from "@/lib/courses";
@@ -18,13 +19,17 @@ function Chips({ items }: { items: string[] }) {
 }
 
 export function CourseSpecs({ course }: { course: Course }) {
+  // Campos vazios no cadastro do curso simplesmente não aparecem.
   const rows = [
-    {
+    course.materials.length > 0 && {
       label: "Materiais abordados",
       content: <Chips items={course.materials} />,
     },
-    { label: "Software", content: <Chips items={course.software} /> },
-    {
+    course.software.length > 0 && {
+      label: "Software",
+      content: <Chips items={course.software} />,
+    },
+    course.requirements && {
       label: "O que trazer",
       content: <p className="mt-3 text-lg">{course.requirements}</p>,
     },
@@ -37,15 +42,17 @@ export function CourseSpecs({ course }: { course: Course }) {
         </p>
       ),
     },
-  ];
+  ].filter((row): row is { label: string; content: ReactElement } =>
+    Boolean(row),
+  );
 
   return (
     <section className="border-t border-border/70">
       <div className="mx-auto grid w-full max-w-6xl gap-10 px-6 py-16 sm:py-20 lg:grid-cols-12">
         <SectionHeading
           eyebrow="Especificações"
-          title="Mão na massa, com a máquina na frente"
-          lead="O curso é prático: cada conceito sai da explicação direto para a impressora."
+          title="Mão na massa, do primeiro ao último módulo"
+          lead="O curso é prático: cada conceito sai da explicação direto para a bancada."
           className="lg:col-span-5"
         />
         <dl className="grid gap-px border-t border-border/70 lg:col-span-7">

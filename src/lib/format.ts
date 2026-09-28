@@ -71,3 +71,11 @@ export function brasiliaInputParts(value: string | Date): {
     time: `${parts.hour}:${parts.minute}`,
   };
 }
+
+/** Ano atual em Brasília (padrão de "edição" de um curso novo). */
+export function currentYear(): string {
+  return new Date().toLocaleDateString("pt-BR", {
+    timeZone: TIME_ZONE,
+    year: "numeric",
+  });
+}

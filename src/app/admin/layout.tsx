@@ -14,6 +14,7 @@ export const metadata: Metadata = {
 
 const nav = [
   { href: "/admin/checkin", label: "Check-in" },
+  { href: "/admin/cursos", label: "Cursos" },
   { href: "/admin/turmas", label: "Turmas" },
   { href: "/admin/reembolsos", label: "Reembolsos" },
   { href: "/admin/auditoria", label: "Auditoria" },

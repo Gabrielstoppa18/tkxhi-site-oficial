@@ -1,4 +1,4 @@
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { audit } from "@/lib/server/audit";
 import { renderCertificate } from "@/lib/server/certificate";
 import { findCohort } from "@/lib/server/cohorts";
@@ -19,7 +19,9 @@ export async function GET(
   const enrollment = isOpaqueToken(token)
     ? await findByCertificateToken(token)
     : null;
-  const course = enrollment ? courseBySlug(enrollment.course_id) : undefined;
+  const course = enrollment
+    ? await findCourse(enrollment.course_id)
+    : undefined;
   const cohort = enrollment ? await findCohort(enrollment.cohort_id) : null;
 
   if (

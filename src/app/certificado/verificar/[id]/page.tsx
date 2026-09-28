@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { connection } from "next/server";
 import { BadgeCheck, XCircle } from "lucide-react";
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { formatDate, formatDateTime } from "@/lib/format";
 import { findCohort } from "@/lib/server/cohorts";
 import { findEnrollment, isActive } from "@/lib/server/enrollments";
@@ -21,7 +21,9 @@ export default async function VerifyCertificatePage({
   await connection();
   const { id } = await params;
   const enrollment = await findEnrollment(id);
-  const course = enrollment ? courseBySlug(enrollment.course_id) : undefined;
+  const course = enrollment
+    ? await findCourse(enrollment.course_id)
+    : undefined;
   const cohort = enrollment ? await findCohort(enrollment.cohort_id) : null;
   const valid =
     enrollment &&

@@ -1,6 +1,7 @@
 import "server-only";
 import { revalidatePath } from "next/cache";
-import { courseBySlug, courseHref } from "@/lib/courses";
+import { courseHref } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { audit, auditTrail } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
 import { db } from "@/lib/server/db";
@@ -113,7 +114,7 @@ export async function syncPayment(
     },
   });
 
-  const course = courseBySlug(enrollment.course_id);
+  const course = await findCourse(enrollment.course_id);
 
   // Fora do UPDATE: um chargeback sobre uma matrícula já reembolsada também
   // precisa chegar a quem vai se defender.
@@ -171,7 +172,7 @@ export async function ensureConfirmationSent(
   `;
   if (history.sent > 0 && !force) return "already_sent";
 
-  const course = courseBySlug(enrollment.course_id);
+  const course = await findCourse(enrollment.course_id);
   const cohort = await findCohort(enrollment.cohort_id);
   if (!course || !cohort) return "failed";
 

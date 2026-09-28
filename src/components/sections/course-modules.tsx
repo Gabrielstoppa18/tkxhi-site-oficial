@@ -1,29 +1,43 @@
 import { Reveal } from "@/components/motion/reveal";
 import { SectionHeading } from "@/components/section-heading";
-import type { Course } from "@/lib/courses";
+import { COURSE_ICONS, COURSE_PILLARS, type Course } from "@/lib/courses";
+import { cn } from "cn";
 
-/** Os módulos como camadas numeradas: a ordem é a ordem de construção da peça. */
+/**
+ * Cada frente numera os módulos com a palavra do seu próprio processo: camada
+ * na impressão, etapa no projeto, capítulo no livro.
+ */
+const STEP_LABEL = {
+  "impressao-3d": "Camada",
+  engenharia: "Etapa",
+  editora: "Capítulo",
+} as const;
+
 export function CourseModules({ course }: { course: Course }) {
+  const style = COURSE_PILLARS[course.pillar];
+  const count = course.modules.length;
+
   return (
-    <section className="material-layered border-t border-border/70">
+    <section className={cn(style.material, "border-t border-border/70")}>
       <div className="mx-auto w-full max-w-6xl px-6 py-16 sm:py-20">
         <SectionHeading
           eyebrow="Programa"
-          title={`${course.modules.length} módulos, da máquina à peça`}
-          lead="Cada módulo prepara o seguinte, na mesma ordem em que uma impressão acontece."
+          title={`${count} ${count === 1 ? "módulo" : "módulos"}`}
+          lead="Cada módulo prepara o seguinte: a ordem do programa é a ordem em que o trabalho acontece."
         />
-        <ol className="mt-10 grid border-t border-border/70 md:grid-cols-2 lg:grid-cols-4">
+        <ol className="mt-10 grid gap-px border border-border/70 bg-border/70 sm:grid-cols-2 lg:grid-cols-4">
           {course.modules.map((module, index) => {
-            const Icon = module.icon;
+            const Icon = COURSE_ICONS[module.icon].icon;
             return (
               <li
-                key={module.title}
-                className="border-b border-border/70 bg-background/80 py-8 md:px-6 md:odd:border-r lg:border-r lg:border-b-0 lg:first:pl-0 lg:last:border-r-0"
+                key={`${index}-${module.title}`}
+                className="bg-background p-6"
               >
-                <Reveal delay={index * 0.08}>
+                <Reveal delay={Math.min(index, 4) * 0.08}>
                   <div className="flex items-center justify-between">
                     <span className="font-mono text-xs tracking-[0.18em] text-muted-foreground">
-                      Camada {String(index + 1).padStart(2, "0")}
+                      {STEP_LABEL[course.pillar]}{" "}
+                      {String(index + 1).padStart(2, "0")}
                     </span>
                     <Icon aria-hidden className="size-5 text-primary" />
                   </div>

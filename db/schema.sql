@@ -69,8 +69,58 @@ CREATE TABLE IF NOT EXISTS totp_replay (
 -- Turmas e matrículas
 -- ---------------------------------------------------------------------------
 
--- Turma de um curso. O conteúdo do curso (módulos, textos) fica em
--- src/lib/courses.ts; aqui ficam data, local, preço, vagas e política.
+-- Curso: o conteúdo (textos, programa, materiais). Criado e editado em
+-- /admin/cursos. O slug é o endereço público (/cursos/<slug>) e não muda
+-- depois de criado — turmas, matrículas e certificados apontam para ele.
+CREATE TABLE IF NOT EXISTS courses (
+  slug         text PRIMARY KEY CHECK (slug ~ '^[a-z0-9]+(-[a-z0-9]+)*$' AND length(slug) <= 60),
+  -- Frente da TkxHi: define cor e textura da página do curso.
+  pillar       text NOT NULL DEFAULT 'impressao-3d'
+               CHECK (pillar IN ('engenharia', 'impressao-3d', 'editora')),
+  title        text NOT NULL,
+  edition      text NOT NULL,
+  tagline      text NOT NULL,
+  lead         text NOT NULL,
+  authors      text NOT NULL,
+  -- [{ "title", "description", "icon" }] — ícone por chave (src/lib/courses.ts).
+  modules      jsonb NOT NULL DEFAULT '[]'::jsonb,
+  materials    text[] NOT NULL DEFAULT '{}',
+  software     text[] NOT NULL DEFAULT '{}',
+  requirements text NOT NULL DEFAULT '',
+  -- Chave de src/lib/photos.ts.
+  photo        text NOT NULL DEFAULT 'turtleSensor',
+  -- draft: invisível · published: no site · archived: fora do catálogo, página mantida
+  status       text NOT NULL DEFAULT 'draft'
+               CHECK (status IN ('draft', 'published', 'archived')),
+  position     integer NOT NULL DEFAULT 0,
+  created_by   text NOT NULL,
+  created_at   timestamptz NOT NULL DEFAULT now(),
+  updated_at   timestamptz NOT NULL DEFAULT now()
+);
+
+-- O primeiro curso, que antes vivia no código. Só entra se ainda não existir:
+-- edições feitas pelo painel não são sobrescritas.
+INSERT INTO courses (slug, pillar, title, edition, tagline, lead, authors, modules,
+  materials, software, requirements, photo, status, position, created_by)
+VALUES (
+  'impressao-3d-basic', 'impressao-3d', 'Impressão 3D: Basic', '2026',
+  'Pense, prepare, imprima!',
+  'Os fundamentos da manufatura aditiva, da anatomia da impressora ao fatiamento, para transformar uma ideia em peça na mesa.',
+  'G. P. Stoppa & M. H. Stoppa',
+  '[
+    {"title": "Introdução", "description": "História, tecnologias (FDM, SLA, SLS), o projeto RepRap e a anatomia da impressora Ender 3.", "icon": "factory"},
+    {"title": "Manutenção", "description": "Preservação, limpeza, lubrificação, troca de filamento e solução de falhas comuns como warping e stringing.", "icon": "bolt"},
+    {"title": "Configuração", "description": "Painel de controle, pré-aquecimento, nivelamento da mesa e a distância correta do bico.", "icon": "layers"},
+    {"title": "Fatiamento", "description": "OrcaSlicer na prática: parâmetros de qualidade e resistência, suportes e calibração.", "icon": "scissors"}
+  ]'::jsonb,
+  ARRAY['PLA (foco prático)', 'ABS', 'PETG', 'TPU'],
+  ARRAY['OrcaSlicer (foco principal)', 'Cura', 'PrusaSlicer'],
+  'Notebook que rode o OrcaSlicer.',
+  'turtleSensor', 'published', 0, 'sistema'
+)
+ON CONFLICT (slug) DO NOTHING;
+
+-- Turma de um curso: data, local, preço, vagas e política de reembolso.
 CREATE TABLE IF NOT EXISTS cohorts (
   id                      uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   course_id               text NOT NULL,
@@ -160,6 +210,26 @@ CREATE TRIGGER cohorts_touch BEFORE UPDATE ON cohorts
 DROP TRIGGER IF EXISTS admins_touch ON admins;
 CREATE TRIGGER admins_touch BEFORE UPDATE ON admins
   FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+DROP TRIGGER IF EXISTS courses_touch ON courses;
+CREATE TRIGGER courses_touch BEFORE UPDATE ON courses
+  FOR EACH ROW EXECUTE FUNCTION touch_updated_at();
+
+CREATE INDEX IF NOT EXISTS courses_status_idx ON courses (status, position);
+
+-- Turma e matrícula só existem para um curso cadastrado. Adicionadas à parte
+-- porque bancos criados antes da tabela de cursos já têm as duas tabelas.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cohorts_course_fk') THEN
+    ALTER TABLE cohorts ADD CONSTRAINT cohorts_course_fk
+      FOREIGN KEY (course_id) REFERENCES courses (slug);
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'enrollments_course_fk') THEN
+    ALTER TABLE enrollments ADD CONSTRAINT enrollments_course_fk
+      FOREIGN KEY (course_id) REFERENCES courses (slug);
+  END IF;
+END
+$$;
 
 -- ---------------------------------------------------------------------------
 -- Auditoria

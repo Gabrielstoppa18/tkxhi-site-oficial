@@ -3,7 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { CheckCircle2, Clock, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courseBySlug, courseHref } from "@/lib/courses";
+import { courseHref } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { findEnrollment } from "@/lib/server/enrollments";
 import { syncPayment } from "@/lib/server/payments";
 
@@ -23,7 +24,7 @@ export default async function ConfirmationPage({
 }: PageProps<"/cursos/[slug]/confirmacao">) {
   const { slug } = await params;
   const query = await searchParams;
-  const course = courseBySlug(slug);
+  const course = await findCourse(slug);
   const enrollmentId =
     typeof query.matricula === "string" ? query.matricula : "";
   let enrollment = await findEnrollment(enrollmentId);

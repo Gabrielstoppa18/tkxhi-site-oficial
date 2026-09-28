@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Award, Check, MailWarning, Send, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courseBySlug } from "@/lib/courses";
+import { courseTitles, findCourse } from "@/lib/server/courses";
 import { formatCpf, formatDate, formatTime } from "@/lib/format";
 import { confirmationsSent } from "@/lib/server/audit";
 import { currentCohort, findCohort, listCohorts } from "@/lib/server/cohorts";
@@ -26,6 +26,7 @@ export default async function CheckinPage({
   searchParams,
 }: PageProps<"/admin/checkin">) {
   await requireAdmin("/admin/checkin");
+  const titles = await courseTitles();
   const query = await searchParams;
   const cohorts = (await listCohorts()).filter(
     (item) => item.status !== "draft",
@@ -52,7 +53,7 @@ export default async function CheckinPage({
     );
   }
 
-  const course = courseBySlug(chosen.courseId);
+  const course = await findCourse(chosen.courseId);
   const enrollments = await listCohortEnrollments(chosen.id);
   const paid = enrollments.filter(isActive);
   const present = paid.filter((item) => item.attendance_confirmed);
@@ -81,7 +82,7 @@ export default async function CheckinPage({
               {cohorts.map((item) => (
                 <option key={item.id} value={item.id}>
                   {formatDate(item.startsAt)} ·{" "}
-                  {courseBySlug(item.courseId)?.title ?? item.courseId}
+                  {titles.get(item.courseId) ?? item.courseId}
                   {item.label ? ` · ${item.label}` : ""}
                 </option>
               ))}

@@ -19,7 +19,7 @@ function latin1(text: string): string {
   return Array.from(text)
     .map((char) => {
       if (char.charCodeAt(0) <= 0xff) return char;
-      const base = char.normalize("NFD").replace(/[̀-ͯ]/g, "");
+      const base = char.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
       return base.charCodeAt(0) <= 0xff ? base : "?";
     })
     .join("");

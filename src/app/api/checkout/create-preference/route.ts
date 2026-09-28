@@ -1,5 +1,6 @@
 import { CONSENT_VERSION, consentText } from "@/lib/consent";
-import { courseBySlug, courseHref } from "@/lib/courses";
+import { courseHref } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { normalizeCpf } from "@/lib/cpf";
 import { audit } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
@@ -75,7 +76,7 @@ export async function POST(request: Request) {
 
   const cohort =
     typeof body.cohortId === "string" ? await findCohort(body.cohortId) : null;
-  const course = cohort ? courseBySlug(cohort.courseId) : undefined;
+  const course = cohort ? await findCourse(cohort.courseId) : undefined;
   if (!cohort || !course || cohort.status !== "open") {
     return fail("As inscrições desta turma não estão abertas.", 404);
   }
@@ -121,16 +122,16 @@ export async function POST(request: Request) {
     );
   }
 
-  if (await hasApprovedEnrollment(cohort.id, email)) {
+  if (await hasApprovedEnrollment(cohort.id, email, name)) {
     return fail(
-      "Este e-mail já tem matrícula confirmada nesta turma.",
+      "Esta pessoa já está matriculada nesta turma. Para matricular outra pessoa com o mesmo e-mail, use o nome dela.",
       409,
-      "email",
+      "name",
     );
   }
   // Tentativas anteriores deste e-mail nesta turma ficam substituídas pela
   // nova — antes de contar vagas, para a própria tentativa antiga não barrar.
-  for (const previous of await supersedePending(cohort.id, email)) {
+  for (const previous of await supersedePending(cohort.id, email, name)) {
     await audit({
       actor: "sistema",
       action: "enrollment_superseded",

@@ -192,7 +192,7 @@ export function CohortForm({
       <div className="grid grid-cols-2 gap-4">
         <Field
           label="Reembolso após 7 dias (%)"
-          hint="0 = sempre análise manual."
+          hint="Para quem não participou. 0 = todo pedido vai para análise."
         >
           <Input
             id="lateRefundPercent"
@@ -205,7 +205,10 @@ export function CohortForm({
             className="h-11 font-mono"
           />
         </Field>
-        <Field label="Até quantos dias antes">
+        <Field
+          label="Até quantos dias antes da turma"
+          hint="Os dois números aparecem no texto que o aluno aceita."
+        >
           <Input
             id="lateRefundDaysBefore"
             name="lateRefundDaysBefore"

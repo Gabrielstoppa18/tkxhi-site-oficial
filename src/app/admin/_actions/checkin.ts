@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { courseBySlug } from "@/lib/courses";
+import { findCourse } from "@/lib/server/courses";
 import { audit } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
 import { db } from "@/lib/server/db";
@@ -84,7 +84,7 @@ export async function undoCheckin(formData: FormData) {
 export async function sendCertificates(formData: FormData) {
   const principal = await requireAdmin();
   const cohort = await findCohort(uuidFrom(formData, "cohortId"));
-  const course = cohort ? courseBySlug(cohort.courseId) : undefined;
+  const course = cohort ? await findCourse(cohort.courseId) : undefined;
   if (!cohort || !course) throw new Error("Turma inválida.");
 
   const attended = await db()<Enrollment[]>`

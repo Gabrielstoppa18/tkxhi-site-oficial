@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { courseBySlug, type CohortStatus } from "@/lib/courses";
+import { type CohortStatus } from "@/lib/courses";
+import { courseTitles } from "@/lib/server/courses";
 import { formatBRL, formatDate, formatTime } from "@/lib/format";
 import { listCohorts } from "@/lib/server/cohorts";
 import { requireAdmin } from "@/lib/server/session";
@@ -17,6 +18,7 @@ export default async function CohortsPage({
   searchParams,
 }: PageProps<"/admin/turmas">) {
   await requireAdmin("/admin/turmas");
+  const titles = await courseTitles();
   const query = await searchParams;
   const cohorts = await listCohorts();
 
@@ -61,7 +63,7 @@ export default async function CohortsPage({
                     {cohort.label ? ` · ${cohort.label}` : ""}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    {courseBySlug(cohort.courseId)?.title ?? cohort.courseId} ·{" "}
+                    {titles.get(cohort.courseId) ?? cohort.courseId} ·{" "}
                     {cohort.venue} · {formatBRL(cohort.priceCents)}
                   </p>
                 </div>
