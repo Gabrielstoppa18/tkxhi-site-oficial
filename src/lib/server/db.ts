@@ -3,24 +3,48 @@ import postgres from "postgres";
 import { env } from "@/lib/server/env";
 
 /**
- * Cliente Postgres único por processo. `prepare: false` mantém compatibilidade
- * com o pooler em modo transação do Supabase e do Neon, que não suportam
- * prepared statements nomeados. Em desenvolvimento o cliente sobrevive ao
- * hot reload pelo globalThis, senão cada edição abriria uma conexão nova.
+ * Cliente Postgres único por processo. Em desenvolvimento o cliente sobrevive
+ * ao hot reload pelo globalThis, senão cada edição abriria uma conexão nova.
  *
- * `connect_timeout` curto: sem ele, uma conexão pendurada com o pooler
- * segura a requisição (ou o build) por muito tempo antes de falhar.
+ * **Supabase: use o pooler em modo sessão (porta 5432), nunca o de modo
+ * transação (6543).** Este driver envia várias consultas seguidas na mesma
+ * conexão (pipelining), e o pooler em modo transação não responde a elas:
+ * medido no banco de dev, 58 de 60 consultas ficaram sem resposta na 6543 e
+ * todas responderam em menos de meio segundo na 5432. Por isso `db()` recusa
+ * a 6543 com um erro claro em vez de travar em silêncio.
+ *
+ * `connect_timeout` curto: uma conexão pendurada não segura a requisição (ou
+ * o build) por muito tempo.
  *
  * Na Vercel, cada instância serverless (e cada processo do build) tem o seu
- * cliente. Com várias delas vivas, 5 conexões por instância esgotam as
- * poucas vagas do pooler do plano grátis do Supabase, e a consulta seguinte
- * fica na fila até alguém liberar. Por isso lá é 1 conexão, devolvida logo.
+ * cliente, e no modo sessão cada conexão aberta ocupa uma vaga do pooler. Por
+ * isso lá é 1 conexão, devolvida após 5 segundos parada.
  */
 const globalForDb = globalThis as unknown as { sql?: postgres.Sql };
 const serverless = Boolean(process.env.VERCEL);
 
+function assertCompatible(url: string): void {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return;
+  }
+  if (
+    parsed.hostname.endsWith(".pooler.supabase.com") &&
+    parsed.port === "6543"
+  ) {
+    throw new Error(
+      "DATABASE_URL usa o pooler do Supabase em modo transação (porta 6543), que trava com este driver. Troque para a porta 5432 (modo sessão). Ver docs/cursos.md.",
+    );
+  }
+}
+
 export function db(): postgres.Sql {
-  globalForDb.sql ??= postgres(env.databaseUrl(), {
+  if (globalForDb.sql) return globalForDb.sql;
+  const url = env.databaseUrl();
+  assertCompatible(url);
+  globalForDb.sql = postgres(url, {
     prepare: false,
     max: serverless ? 1 : 5,
     idle_timeout: serverless ? 5 : 20,
