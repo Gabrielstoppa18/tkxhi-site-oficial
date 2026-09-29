@@ -2,7 +2,7 @@ import "server-only";
 import { type Cohort, type CohortStatus } from "@/lib/courses";
 import { findCourse } from "@/lib/server/courses";
 import { audit } from "@/lib/server/audit";
-import { db } from "@/lib/server/db";
+import { db, tolerant } from "@/lib/server/db";
 import { PENDING_HOLD_MINUTES } from "@/lib/server/enrollments";
 
 type CohortRow = {
@@ -316,16 +316,7 @@ export async function deleteCohort(
 export async function publicCohorts(
   courseId: string,
 ): Promise<CohortWithSeats[]> {
-  if (!process.env.DATABASE_URL) return [];
-  try {
-    return await listOpenCohorts(courseId);
-  } catch (error) {
-    console.warn(
-      "Turmas indisponíveis",
-      error instanceof Error ? error.message : error,
-    );
-    return [];
-  }
+  return tolerant("Turmas", () => listOpenCohorts(courseId), []);
 }
 
 /** Turma sugerida no check-in: a mais próxima que ainda não terminou, senão a mais recente. */
@@ -347,21 +338,18 @@ export function currentCohort<T extends Cohort>(cohorts: T[]): T | undefined {
  * como publicCohorts: sem banco, devolve mapa vazio.
  */
 export async function nextOpenCohorts(): Promise<Map<string, CohortWithSeats>> {
-  if (!process.env.DATABASE_URL) return new Map();
-  try {
-    const sql = db();
-    const rows = await sql<Row[]>`
-      SELECT DISTINCT ON (c.course_id) c.*, ${sql.unsafe(SEATS("c"))}
-      FROM cohorts c
-      WHERE c.status = 'open' AND c.starts_at > now()
-      ORDER BY c.course_id, c.starts_at
-    `;
-    return new Map(rows.map((row) => [row.course_id, withSeats(row)]));
-  } catch (error) {
-    console.warn(
-      "Turmas indisponíveis",
-      error instanceof Error ? error.message : error,
-    );
-    return new Map();
-  }
+  return tolerant(
+    "Turmas",
+    async () => {
+      const sql = db();
+      const rows = await sql<Row[]>`
+        SELECT DISTINCT ON (c.course_id) c.*, ${sql.unsafe(SEATS("c"))}
+        FROM cohorts c
+        WHERE c.status = 'open' AND c.starts_at > now()
+        ORDER BY c.course_id, c.starts_at
+      `;
+      return new Map(rows.map((row) => [row.course_id, withSeats(row)]));
+    },
+    new Map<string, CohortWithSeats>(),
+  );
 }

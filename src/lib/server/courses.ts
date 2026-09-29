@@ -10,7 +10,7 @@ import {
 } from "@/lib/courses";
 import { photos, type PhotoKey } from "@/lib/photos";
 import { audit } from "@/lib/server/audit";
-import { db } from "@/lib/server/db";
+import { db, tolerant } from "@/lib/server/db";
 
 type CourseRow = {
   slug: string;
@@ -88,34 +88,28 @@ export async function courseTitles(): Promise<Map<string, string>> {
  * banco (no build, por exemplo) devolve lista vazia até a próxima revalidação.
  */
 export async function publishedCourses(): Promise<Course[]> {
-  if (!process.env.DATABASE_URL) return [];
-  try {
-    const rows = await db()<CourseRow[]>`
-      SELECT * FROM courses WHERE status = 'published' ORDER BY position, title
-    `;
-    return rows.map(toCourse);
-  } catch (error) {
-    console.warn(
-      "Cursos indisponíveis",
-      error instanceof Error ? error.message : error,
-    );
-    return [];
-  }
+  return tolerant(
+    "Cursos",
+    async () => {
+      const rows = await db()<CourseRow[]>`
+        SELECT * FROM courses WHERE status = 'published' ORDER BY position, title
+      `;
+      return rows.map(toCourse);
+    },
+    [],
+  );
 }
 
 /** Versão tolerante de findCourse para páginas públicas estáticas. */
 export async function publicCourse(slug: string): Promise<Course | undefined> {
-  if (!process.env.DATABASE_URL) return undefined;
-  try {
-    const course = await findCourse(slug);
-    return course && course.status !== "draft" ? course : undefined;
-  } catch (error) {
-    console.warn(
-      "Curso indisponível",
-      error instanceof Error ? error.message : error,
-    );
-    return undefined;
-  }
+  return tolerant(
+    "Curso",
+    async () => {
+      const course = await findCourse(slug);
+      return course && course.status !== "draft" ? course : undefined;
+    },
+    undefined,
+  );
 }
 
 // ---- formulário -------------------------------------------------------------
