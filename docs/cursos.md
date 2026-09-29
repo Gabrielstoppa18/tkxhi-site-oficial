@@ -236,7 +236,16 @@ e-mail; o mesmo aluno não paga duas vezes por engano. Uma nova tentativa de
 pagamento do mesmo aluno cancela as tentativas pendentes anteriores dele — só
 dele, não dos irmãos.
 
-## Privacidade
+## Termos de uso e privacidade
+
+`/termos-de-uso` resume as regras de matrícula, pagamento, presença,
+certificado, reembolso e mudança ou cancelamento de turma. As condições de
+reembolso de cada turma ficam no texto de ciência, que prevalece sobre o
+resumo. Os termos prometem que, se a data ou o local mudar, o aluno é avisado
+por e-mail e pode escolher entre manter a vaga ou receber o valor integral — e
+que turma cancelada é reembolsada por inteiro. **Hoje os dois casos são
+manuais**: o aviso sai pela equipe e os reembolsos são feitos em
+`/admin/reembolsos` ou no painel do Mercado Pago.
 
 `/politica-de-privacidade` descreve o que o sistema de fato faz: dados
 coletados, finalidades e bases legais, fornecedores (Mercado Pago, Resend,

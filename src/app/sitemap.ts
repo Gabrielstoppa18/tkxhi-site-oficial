@@ -38,6 +38,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.7,
     })),
     {
+      url: `${siteConfig.url}/termos-de-uso`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
       url: `${siteConfig.url}/politica-de-privacidade`,
       lastModified,
       changeFrequency: "yearly",

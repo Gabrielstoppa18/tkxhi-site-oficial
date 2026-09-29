@@ -33,10 +33,8 @@ export const mainNav = [
   { href: "/cursos", label: "Cursos" },
 ] as const;
 
-// TODO: migrar os termos de uso para rota própria. Enquanto isso o link
-// aponta para a página que já está publicada, para não gerar 404.
 export const legalNav = [
-  { href: "https://tkxhi.com/termos-de-uso/", label: "Termos de uso" },
+  { href: "/termos-de-uso", label: "Termos de uso" },
   { href: "/politica-de-privacidade", label: "Política de Privacidade" },
 ] as const;
 

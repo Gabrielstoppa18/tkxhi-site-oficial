@@ -14,7 +14,7 @@ import { formatDate, formatTime } from "@/lib/format";
  * Revise esta redação com um advogado antes de abrir as vendas: o direito de
  * arrependimento (CDC, art. 49) não pode ser renunciado por contrato.
  */
-export const CONSENT_VERSION = "2026-09-28";
+export const CONSENT_VERSION = "2026-09-29";
 
 export function consentItems(course: Course, cohort: Cohort): string[] {
   return [
@@ -25,7 +25,7 @@ export function consentItems(course: Course, cohort: Cohort): string[] {
     cohort.lateRefundPercent > 0
       ? `Depois dos 7 dias, se eu não tiver participado, recebo ${cohort.lateRefundPercent}% do valor pedindo o reembolso até ${cohort.lateRefundDaysBefore} dias antes da turma. Outros casos são analisados individualmente.`
       : "Depois dos 7 dias, pedidos de reembolso são analisados individualmente.",
-    "Meus dados (nome, e-mail, CPF e o registro desta ciência) serão tratados conforme a Política de Privacidade da TkxHi, publicada no site.",
+    "Li e aceito os Termos de Uso da TkxHi, e meus dados (nome, e-mail, CPF e o registro desta ciência) serão tratados conforme a Política de Privacidade, ambos publicados no site.",
   ];
 }
 
