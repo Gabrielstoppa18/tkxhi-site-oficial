@@ -10,14 +10,20 @@ import { env } from "@/lib/server/env";
  *
  * `connect_timeout` curto: sem ele, uma conexão pendurada com o pooler
  * segura a requisição (ou o build) por muito tempo antes de falhar.
+ *
+ * Na Vercel, cada instância serverless (e cada processo do build) tem o seu
+ * cliente. Com várias delas vivas, 5 conexões por instância esgotam as
+ * poucas vagas do pooler do plano grátis do Supabase, e a consulta seguinte
+ * fica na fila até alguém liberar. Por isso lá é 1 conexão, devolvida logo.
  */
 const globalForDb = globalThis as unknown as { sql?: postgres.Sql };
+const serverless = Boolean(process.env.VERCEL);
 
 export function db(): postgres.Sql {
   globalForDb.sql ??= postgres(env.databaseUrl(), {
     prepare: false,
-    max: 5,
-    idle_timeout: 20,
+    max: serverless ? 1 : 5,
+    idle_timeout: serverless ? 5 : 20,
     connect_timeout: 10,
   });
   return globalForDb.sql;
