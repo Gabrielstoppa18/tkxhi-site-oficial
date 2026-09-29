@@ -97,6 +97,21 @@ Fundo padrão: violeta quase preto `#190630`, derivado de `#250469` e `#350049`.
 
 **Não invente métricas.** A empresa é pequena e não publica números. Nada de "10k+ clientes" ou prova social fabricada.
 
+## Cursos, pagamentos e painel
+
+Venda de cursos presenciais com Mercado Pago (Checkout Pro), Postgres e Resend, mais o painel `/admin`. Fluxo, variáveis, rotação de segredos e modelo de segurança estão em **`docs/cursos.md`**. Regras que não se quebram:
+
+- **Código de servidor fica em `src/lib/server/`**, sempre com `import "server-only"`. **Cursos** (conteúdo) e **turmas** (data, local, preço, vagas, política de reembolso) ficam no banco e são gerenciados em `/admin/cursos` e `/admin/turmas`. `src/lib/courses.ts` tem só tipos, ícones e o estilo de cada frente — é importado pelo navegador. Páginas públicas leem com as funções tolerantes (`publishedCourses`, `publicCourse`, `publicCohorts`): sem banco, a página cai em "em breve", nunca em erro.
+- **Segredo nenhum com prefixo `NEXT_PUBLIC_`.** Variável nova passa por `src/lib/server/env.ts` (com validação) e entra em `env.template` e `docs/cursos.md`. O `.env` é gerado por `npm run setup`; nunca escreva segredo em código, log ou mensagem.
+- **Cripto só por `src/lib/server/crypto.ts`**: HMAC com chave derivada por finalidade, AES-256-GCM com contexto (AAD). Nada de `createHmac` ou `createCipheriv` solto. Dado pessoal novo (documento, telefone) entra cifrado.
+- **Toda página e server action do painel começa com `requireAdmin()`** (ou `requireMaster()` para gestão de usuários). O layout de `/admin` não protege nada.
+- **O webhook nunca confia no payload**: valida o `x-signature` e consulta `GET /v1/payments/{id}`. Mudança de status passa por `syncPayment()`.
+- **Tudo que altera matrícula, turma ou admin chama `audit()`.** A tabela `audit_log` recusa UPDATE, DELETE e TRUNCATE: é a evidência num chargeback.
+- **Rota pública nova que escreve no banco ganha limite** em `src/lib/server/rate-limit.ts`.
+- **Texto de ciência mudou? Troque `CONSENT_VERSION`** em `src/lib/consent.ts`. O servidor recalcula o texto; nunca grave o que o navegador mandar.
+- **O sistema só reembolsa sozinho quando a resposta é sim** (`src/lib/refund-policy.ts`). Caso duvidoso vai para `manual_review`.
+- **Não afrouxe a CSP do painel** (`src/proxy.ts`): script só com nonce.
+
 ## Design
 
 Antes de criar ou revisar qualquer UI, use a skill **`ui-ux-pro-max`** (instalada como plugin) para escolher estilo, paleta, tipografia e checar as regras de UX/acessibilidade. Ela tem base local pesquisável e guidelines específicas para Next.js + Tailwind + shadcn.

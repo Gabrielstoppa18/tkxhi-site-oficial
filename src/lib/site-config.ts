@@ -30,16 +30,12 @@ export const mainNav = [
   { href: "/engenharia", label: "Engenharia" },
   { href: "/impressao-3d", label: "Impressão 3D" },
   { href: "/editora", label: "Editora" },
+  { href: "/cursos", label: "Cursos" },
 ] as const;
 
-// TODO: migrar o texto jurídico para rotas próprias. Enquanto isso os links
-// apontam para as páginas que já estão publicadas, para não gerar 404.
 export const legalNav = [
-  { href: "https://tkxhi.com/termos-de-uso/", label: "Termos de uso" },
-  {
-    href: "https://tkxhi.com/politica-de-privacidade/",
-    label: "Política de Privacidade",
-  },
+  { href: "/termos-de-uso", label: "Termos de uso" },
+  { href: "/politica-de-privacidade", label: "Política de Privacidade" },
 ] as const;
 
 export type SiteConfig = typeof siteConfig;

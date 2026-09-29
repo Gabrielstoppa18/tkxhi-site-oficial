@@ -1,10 +1,16 @@
 import type { MetadataRoute } from "next";
 import { pillars } from "@/lib/content";
+import { courseHref } from "@/lib/courses";
+import { publishedCourses } from "@/lib/server/courses";
 import { siteConfig } from "@/lib/site-config";
 
-/** Registre cada rota nova aqui — o sitemap não é gerado automaticamente. */
-export default function sitemap(): MetadataRoute.Sitemap {
+// Os cursos vêm do banco: o sitemap se refaz a cada hora.
+export const revalidate = 3600;
+
+/** Rotas fixas entram aqui à mão; os cursos publicados entram sozinhos. */
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const lastModified = new Date();
+  const courses = await publishedCourses();
 
   return [
     {
@@ -19,5 +25,29 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: "monthly" as const,
       priority: 0.8,
     })),
+    {
+      url: `${siteConfig.url}/cursos`,
+      lastModified,
+      changeFrequency: "weekly",
+      priority: 0.8,
+    },
+    ...courses.map((course) => ({
+      url: `${siteConfig.url}${courseHref(course)}`,
+      lastModified,
+      changeFrequency: "weekly" as const,
+      priority: 0.7,
+    })),
+    {
+      url: `${siteConfig.url}/termos-de-uso`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
+    {
+      url: `${siteConfig.url}/politica-de-privacidade`,
+      lastModified,
+      changeFrequency: "yearly",
+      priority: 0.2,
+    },
   ];
 }
