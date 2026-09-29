@@ -139,8 +139,16 @@ export async function syncPayment(
   const current = updated ?? enrollment;
 
   // A vaga mudou de dono: a página do curso precisa mostrar "esgotada" logo.
+  // syncPayment também roda durante a renderização da página de retorno do
+  // pagamento, onde o Next proíbe revalidatePath e lança erro. A atualização
+  // é um bônus (a página se refaz sozinha em 5 minutos) e nunca pode impedir
+  // o que vem depois — o e-mail de confirmação.
   if (course && updated && updated.previous_status !== next) {
-    revalidatePath(courseHref(course));
+    try {
+      revalidatePath(courseHref(course));
+    } catch {
+      // Fora de webhook ou ação: fica para a revalidação periódica.
+    }
   }
 
   // Não só na transição: se um envio anterior falhou, cada nova notificação
