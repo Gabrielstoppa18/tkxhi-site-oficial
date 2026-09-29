@@ -55,6 +55,22 @@ certificado, e o modelo de segurança que o protege.
 
 ## Produção (Vercel)
 
+**Banco compartilhado.** Dev e produção usam o mesmo projeto do Supabase, em
+**schemas separados**: o dev fica em `public` (com os dados de teste) e a
+produção em `prod`, limpo. As tabelas são independentes — turma, matrícula,
+admin, sessão e auditoria de um ambiente não aparecem no outro.
+
+- Crie o schema da produção uma vez: `npm run db:migrate -- --schema=prod`.
+  Cada mudança de schema futura precisa rodar nos dois (`npm run db:migrate`
+  e `npm run db:migrate -- --schema=prod`).
+- Em Production, `DATABASE_SCHEMA=prod`. No Preview e no `.env` local, vazio
+  (`public`).
+- O app confere o schema na primeira conexão; se cair em outro (variável
+  errada, schema não migrado), recusa todas as consultas em vez de gravar no
+  lugar errado.
+- Todas as tabelas têm RLS ativado e nenhum privilégio para os papéis `anon` e
+  `authenticated` do Supabase: a API REST do projeto não enxerga os dados.
+
 - Cadastre cada variável em _Settings → Environment Variables_ marcada como
   **Sensitive**: depois de salva, nem quem tem acesso ao projeto consegue
   lê-la de volta.
@@ -71,22 +87,23 @@ certificado, e o modelo de segurança que o protege.
 
 O modelo comentado está em [`env.template`](../env.template).
 
-| Variável                       | Origem   | Para quê                                                                     |
-| ------------------------------ | -------- | ---------------------------------------------------------------------------- |
-| `DATABASE_URL`                 | manual   | Postgres. No Supabase, o **Session pooler** (porta **5432**) — nunca a 6543. |
-| `MP_ACCESS_TOKEN`              | manual   | Access token da aplicação no Mercado Pago.                                   |
-| `MP_WEBHOOK_SECRET`            | manual   | Assinatura secreta do webhook, gerada no painel do MP.                       |
-| `APP_SECRET`                   | setup    | Assina os links de reembolso. Chaves por finalidade são derivadas por HKDF.  |
-| `APP_SECRET_PREVIOUS`          | setup    | Só durante uma rotação: continua aceito para verificar links antigos.        |
-| `DATA_ENCRYPTION_KEY`          | setup    | AES-256-GCM dos CPFs e dos segredos 2FA no banco.                            |
-| `DATA_ENCRYPTION_KEY_PREVIOUS` | manual   | Só durante uma recifragem: continua aceita para decifrar.                    |
-| `ADMIN_MASTER_USERNAME`        | setup    | Usuário do master.                                                           |
-| `ADMIN_MASTER_PASSWORD_HASH`   | setup    | Hash scrypt da senha do master (N=2^17, r=8, p=1).                           |
-| `ADMIN_MASTER_TOTP_SECRET`     | setup    | Segredo do 2FA do master.                                                    |
-| `RESEND_API_KEY`               | manual   | Obrigatória em produção. Fora dela, sem chave, e-mails vão para o console.   |
-| `EMAIL_FROM`                   | manual   | Remetente num domínio verificado no Resend.                                  |
-| `ADMIN_NOTIFY_EMAIL`           | opcional | Quem recebe avisos de reembolso em análise e de chargeback.                  |
-| `APP_URL`                      | opcional | URL pública para links e QR. Na Vercel, deixe vazio.                         |
+| Variável                       | Origem   | Para quê                                                                            |
+| ------------------------------ | -------- | ----------------------------------------------------------------------------------- |
+| `DATABASE_URL`                 | manual   | Postgres. No Supabase, o **Session pooler** (porta **5432**) — nunca a 6543.        |
+| `DATABASE_SCHEMA`              | manual   | Schema do ambiente no banco: `public` no dev, `prod` na produção. Vazio = `public`. |
+| `MP_ACCESS_TOKEN`              | manual   | Access token da aplicação no Mercado Pago.                                          |
+| `MP_WEBHOOK_SECRET`            | manual   | Assinatura secreta do webhook, gerada no painel do MP.                              |
+| `APP_SECRET`                   | setup    | Assina os links de reembolso. Chaves por finalidade são derivadas por HKDF.         |
+| `APP_SECRET_PREVIOUS`          | setup    | Só durante uma rotação: continua aceito para verificar links antigos.               |
+| `DATA_ENCRYPTION_KEY`          | setup    | AES-256-GCM dos CPFs e dos segredos 2FA no banco.                                   |
+| `DATA_ENCRYPTION_KEY_PREVIOUS` | manual   | Só durante uma recifragem: continua aceita para decifrar.                           |
+| `ADMIN_MASTER_USERNAME`        | setup    | Usuário do master.                                                                  |
+| `ADMIN_MASTER_PASSWORD_HASH`   | setup    | Hash scrypt da senha do master (N=2^17, r=8, p=1).                                  |
+| `ADMIN_MASTER_TOTP_SECRET`     | setup    | Segredo do 2FA do master.                                                           |
+| `RESEND_API_KEY`               | manual   | Obrigatória em produção. Fora dela, sem chave, e-mails vão para o console.          |
+| `EMAIL_FROM`                   | manual   | Remetente num domínio verificado no Resend.                                         |
+| `ADMIN_NOTIFY_EMAIL`           | opcional | Quem recebe avisos de reembolso em análise e de chargeback.                         |
+| `APP_URL`                      | opcional | URL pública para links e QR. Na Vercel, deixe vazio.                                |
 
 Nenhuma dessas variáveis tem prefixo `NEXT_PUBLIC_`, e todo código que as lê
 importa `server-only`: o build quebra se alguém tentar levá-las ao navegador.

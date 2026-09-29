@@ -40,17 +40,44 @@ function assertCompatible(url: string): void {
   }
 }
 
+/**
+ * Schema errado detectado: a partir daí, nenhuma consulta passa. Melhor o
+ * painel fora do ar do que a produção gravando nas tabelas do dev.
+ */
+let schemaMismatch: string | null = null;
+
 export function db(): postgres.Sql {
+  if (schemaMismatch) throw new Error(schemaMismatch);
   if (globalForDb.sql) return globalForDb.sql;
   const url = env.databaseUrl();
   assertCompatible(url);
-  globalForDb.sql = postgres(url, {
+  const schema = env.databaseSchema();
+  const sql = postgres(url, {
     prepare: false,
     max: serverless ? 1 : 5,
     idle_timeout: serverless ? 5 : 20,
     connect_timeout: 10,
+    // Dev e produção dividem o banco em schemas separados. O search_path tem
+    // só o schema do ambiente — nunca "public" como reserva —, então uma
+    // tabela que falte na produção dá erro em vez de ler os dados do dev.
+    // Conferido no pooler do Supabase (modo sessão): o parâmetro é aplicado.
+    connection: { search_path: schema },
   });
-  return globalForDb.sql;
+  globalForDb.sql = sql;
+
+  // Defesa extra: se algum dia o parâmetro for ignorado em silêncio (outro
+  // pooler, outro provedor), a primeira conexão denuncia e o app para de
+  // consultar. Sem o schema criado, current_schema() volta nulo — também
+  // conta como erro: falta rodar a migração daquele schema.
+  void sql`SELECT current_schema() AS current`
+    .then(([row]) => {
+      if (row?.current !== schema) {
+        schemaMismatch = `Conexão caiu no schema "${row?.current ?? "nenhum"}", esperado "${schema}". Rode "npm run db:migrate -- --schema=${schema}" e confira DATABASE_SCHEMA.`;
+        console.error(`[tkxhi] ${schemaMismatch}`);
+      }
+    })
+    .catch(() => {});
+  return sql;
 }
 
 /**

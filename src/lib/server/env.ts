@@ -56,6 +56,19 @@ function secret(name: string, minLength: number): string {
 
 export const env = {
   databaseUrl: () => required("DATABASE_URL"),
+  /**
+   * Schema do Postgres deste ambiente. Dev e produção usam o mesmo banco com
+   * schemas separados (ex.: "public" no dev, "prod" na produção).
+   */
+  databaseSchema: () => {
+    const value = read("DATABASE_SCHEMA") ?? "public";
+    if (!/^[a-z_][a-z0-9_]{0,30}$/.test(value)) {
+      throw new EnvError(
+        "DATABASE_SCHEMA: só letras minúsculas, números e _ (ex.: prod).",
+      );
+    }
+    return value;
+  },
 
   mpAccessToken: () => secret("MP_ACCESS_TOKEN", 20),
   mpWebhookSecret: () => secret("MP_WEBHOOK_SECRET", 16),

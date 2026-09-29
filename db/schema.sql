@@ -220,11 +220,13 @@ CREATE INDEX IF NOT EXISTS courses_status_idx ON courses (status, position);
 -- porque bancos criados antes da tabela de cursos já têm as duas tabelas.
 DO $$
 BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'cohorts_course_fk') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+      WHERE conname = 'cohorts_course_fk' AND connamespace = current_schema()::regnamespace) THEN
     ALTER TABLE cohorts ADD CONSTRAINT cohorts_course_fk
       FOREIGN KEY (course_id) REFERENCES courses (slug);
   END IF;
-  IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'enrollments_course_fk') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_constraint
+      WHERE conname = 'enrollments_course_fk' AND connamespace = current_schema()::regnamespace) THEN
     ALTER TABLE enrollments ADD CONSTRAINT enrollments_course_fk
       FOREIGN KEY (course_id) REFERENCES courses (slug);
   END IF;
@@ -264,3 +266,35 @@ CREATE TRIGGER audit_log_no_change BEFORE UPDATE OR DELETE ON audit_log
 DROP TRIGGER IF EXISTS audit_log_no_truncate ON audit_log;
 CREATE TRIGGER audit_log_no_truncate BEFORE TRUNCATE ON audit_log
   FOR EACH STATEMENT EXECUTE FUNCTION audit_log_immutable();
+
+-- ---------------------------------------------------------------------------
+-- Acesso
+-- ---------------------------------------------------------------------------
+
+-- O app conecta como dono das tabelas, que não é afetado por RLS. Ativar RLS
+-- sem nenhuma política fecha a porta para os outros papéis — no Supabase, os
+-- papéis "anon" e "authenticated" da API REST, que por padrão enxergam o
+-- schema public com a chave pública do projeto.
+ALTER TABLE admins ENABLE ROW LEVEL SECURITY;
+ALTER TABLE admin_sessions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE totp_replay ENABLE ROW LEVEL SECURITY;
+ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cohorts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE enrollments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+
+-- E, onde esses papéis existirem, nenhum privilégio sobre as tabelas.
+DO $$
+DECLARE
+  role_name text;
+BEGIN
+  FOREACH role_name IN ARRAY ARRAY['anon', 'authenticated'] LOOP
+    IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = role_name) THEN
+      EXECUTE format('REVOKE ALL ON ALL TABLES IN SCHEMA %I FROM %I', current_schema(), role_name);
+      EXECUTE format('REVOKE ALL ON ALL SEQUENCES IN SCHEMA %I FROM %I', current_schema(), role_name);
+      EXECUTE format('REVOKE ALL ON ALL FUNCTIONS IN SCHEMA %I FROM %I', current_schema(), role_name);
+    END IF;
+  END LOOP;
+END
+$$;
