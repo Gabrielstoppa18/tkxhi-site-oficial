@@ -37,7 +37,17 @@ export default async function ConfirmationPage({
       ? query.payment_id
       : null;
   if (enrollment.payment_status === "pending" && paymentId) {
-    const synced = await syncPayment(paymentId, "sistema").catch(() => null);
+    // A página continua mostrando o estado do banco se a consulta falhar,
+    // mas a falha vai para o log — engolida em silêncio, ela escondeu um
+    // e-mail de confirmação que nunca saiu.
+    const synced = await syncPayment(paymentId, "sistema").catch((error) => {
+      console.error(
+        "Falha ao sincronizar na página de confirmação",
+        paymentId,
+        error instanceof Error ? error.message : error,
+      );
+      return null;
+    });
     if (synced?.id === enrollment.id) enrollment = synced;
   }
 
