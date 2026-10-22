@@ -12,7 +12,14 @@ export type Enrollment = {
   cohort_id: string;
   buyer_name: string;
   buyer_email: string;
-  buyer_cpf_enc: string;
+  /** Pode faltar só em matrícula feita pelo painel (parceria). */
+  buyer_cpf_enc: string | null;
+  /** Telefone em E.164, cifrado. Matrículas antigas não têm. */
+  buyer_phone_enc: string | null;
+  /** 'checkout' (pagou pelo site) ou 'admin' (cadastrada pela equipe). */
+  source: "checkout" | "admin";
+  /** Parceria ou motivo da matrícula feita pelo painel. */
+  partner: string | null;
   amount_cents: number;
   late_refund_percent: number;
   late_refund_days_before: number;
@@ -47,8 +54,19 @@ export const PENDING_HOLD_MINUTES = 30;
 /** CPF em texto puro, só para exibir no painel. No banco ele fica cifrado. */
 export function buyerCpf(
   enrollment: Pick<Enrollment, "buyer_cpf_enc">,
-): string {
-  return decrypt(enrollment.buyer_cpf_enc, "cpf");
+): string | null {
+  return enrollment.buyer_cpf_enc
+    ? decrypt(enrollment.buyer_cpf_enc, "cpf")
+    : null;
+}
+
+/** Telefone em E.164 ("+5564…"), só para exibir no painel ou contatar o aluno. */
+export function buyerPhone(
+  enrollment: Pick<Enrollment, "buyer_phone_enc">,
+): string | null {
+  return enrollment.buyer_phone_enc
+    ? decrypt(enrollment.buyer_phone_enc, "phone")
+    : null;
 }
 
 export async function findEnrollment(id: string): Promise<Enrollment | null> {

@@ -8,6 +8,7 @@ import { findCohort } from "@/lib/server/cohorts";
 import { requireAdmin } from "@/lib/server/session";
 import { removeCohort } from "../../_actions/cohorts";
 import { CohortForm } from "../cohort-form";
+import { ManualEnrollmentForm } from "./manual-enrollment-form";
 
 export default async function EditCohortPage({
   params,
@@ -69,6 +70,31 @@ export default async function EditCohortPage({
           }}
         />
       </div>
+
+      {cohort.status !== "cancelled" ? (
+        <section
+          aria-labelledby="manual-enrollment"
+          className="mt-12 border-t border-border pt-8"
+        >
+          <h2
+            id="manual-enrollment"
+            className="font-display text-2xl font-bold tracking-tight"
+          >
+            Matricular pelo painel
+          </h2>
+          <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+            Para parcerias e cortesias. A matrícula entra já paga, sem passar
+            pelo Mercado Pago, e ocupa uma vaga. Reembolso, se houver, é
+            combinado com a parceria — o sistema não devolve nada sozinho.
+          </p>
+          <div className="mt-6">
+            <ManualEnrollmentForm
+              cohortId={cohort.id}
+              defaultAmount={(cohort.priceCents / 100).toFixed(2)}
+            />
+          </div>
+        </section>
+      ) : null}
 
       {cohort.status === "draft" && cohort.taken === 0 ? (
         <form

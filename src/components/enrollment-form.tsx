@@ -5,8 +5,9 @@ import { ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { maskPhone } from "@/lib/phone";
 
-type Field = "name" | "email" | "cpf" | "consent";
+type Field = "name" | "email" | "phone" | "cpf" | "consent";
 
 export type CohortOption = {
   id: string;
@@ -46,6 +47,7 @@ export function EnrollmentForm({
     cohorts.find((cohort) => cohort.id === cohortId) ?? firstAvailable;
   const consentItems = selected.consentItems;
   const [cpf, setCpf] = useState("");
+  const [phone, setPhone] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<{ message: string; field?: Field } | null>(
     null,
@@ -66,6 +68,7 @@ export function EnrollmentForm({
           name: form.get("name"),
           email: form.get("email"),
           cpf: form.get("cpf"),
+          phone: form.get("phone"),
           consent: accepted,
           consentVersion,
         }),
@@ -162,6 +165,26 @@ export function EnrollmentForm({
         />
         <p className="text-xs text-muted-foreground">
           O QR code de entrada chega por aqui.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor={`${id}-phone`}>Telefone (WhatsApp)</Label>
+        <Input
+          id={`${id}-phone`}
+          name="phone"
+          type="tel"
+          required
+          inputMode="tel"
+          autoComplete="tel-national"
+          placeholder="(64) 99999-9999"
+          value={phone}
+          onChange={(event) => setPhone(maskPhone(event.target.value))}
+          className="h-11 font-mono"
+          {...fieldProps("phone")}
+        />
+        <p className="text-xs text-muted-foreground">
+          Para avisos sobre a turma, como mudança de horário.
         </p>
       </div>
 

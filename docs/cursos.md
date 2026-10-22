@@ -8,7 +8,7 @@ certificado, e o modelo de segurança que o protege.
 /admin/turmas ──► turma "aberta" ──► /cursos/[slug] (ciência + escolha da turma)
                                           │
                      POST /api/checkout/create-preference ──► Mercado Pago
-                     grava pending + ciência + IP + CPF cifrado    │
+                     grava pending + ciência + IP + CPF/telefone cifrados │
                                                                    ▼
 /cursos/[slug]/confirmacao ◄── retorno ── POST /api/webhooks/mercadopago
                                           valida x-signature, consulta a API,
@@ -95,7 +95,7 @@ O modelo comentado está em [`env.template`](../env.template).
 | `MP_WEBHOOK_SECRET`            | manual   | Assinatura secreta do webhook, gerada no painel do MP.                              |
 | `APP_SECRET`                   | setup    | Assina os links de reembolso. Chaves por finalidade são derivadas por HKDF.         |
 | `APP_SECRET_PREVIOUS`          | setup    | Só durante uma rotação: continua aceito para verificar links antigos.               |
-| `DATA_ENCRYPTION_KEY`          | setup    | AES-256-GCM dos CPFs e dos segredos 2FA no banco.                                   |
+| `DATA_ENCRYPTION_KEY`          | setup    | AES-256-GCM dos CPFs, telefones e segredos 2FA no banco.                            |
 | `DATA_ENCRYPTION_KEY_PREVIOUS` | manual   | Só durante uma recifragem: continua aceita para decifrar.                           |
 | `ADMIN_MASTER_USERNAME`        | setup    | Usuário do master.                                                                  |
 | `ADMIN_MASTER_PASSWORD_HASH`   | setup    | Hash scrypt da senha do master (N=2^17, r=8, p=1).                                  |
@@ -111,14 +111,14 @@ Ao subir, o servidor avisa no log quais estão faltando (só os nomes).
 
 ### Rotação de segredos
 
-| Situação                              | Como fazer                                                                                                 |
-| ------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| Trocar senha ou 2FA do master         | `npm run setup -- --master`. As sessões abertas do master caem sozinhas.                                   |
-| `APP_SECRET` pode ter vazado          | `npm run setup -- --rotate-app-secret`. Depois de 72 h, apague `APP_SECRET_PREVIOUS`.                      |
-| Admin saiu da equipe                  | _Usuários → Desativar_. A sessão dele cai na hora.                                                         |
-| Admin perdeu o celular do 2FA         | _Usuários → Nova senha_. Ele refaz o primeiro acesso.                                                      |
-| `DATA_ENCRYPTION_KEY` pode ter vazado | Exige recifrar CPFs e segredos 2FA com a chave nova, usando `DATA_ENCRYPTION_KEY_PREVIOUS`. Não há script. |
-| Token do MP ou chave do Resend vazou  | Revogue no painel do serviço, gere outro e atualize na Vercel.                                             |
+| Situação                              | Como fazer                                                                                                            |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Trocar senha ou 2FA do master         | `npm run setup -- --master`. As sessões abertas do master caem sozinhas.                                              |
+| `APP_SECRET` pode ter vazado          | `npm run setup -- --rotate-app-secret`. Depois de 72 h, apague `APP_SECRET_PREVIOUS`.                                 |
+| Admin saiu da equipe                  | _Usuários → Desativar_. A sessão dele cai na hora.                                                                    |
+| Admin perdeu o celular do 2FA         | _Usuários → Nova senha_. Ele refaz o primeiro acesso.                                                                 |
+| `DATA_ENCRYPTION_KEY` pode ter vazado | Exige recifrar CPFs, telefones e segredos 2FA com a chave nova, usando `DATA_ENCRYPTION_KEY_PREVIOUS`. Não há script. |
+| Token do MP ou chave do Resend vazou  | Revogue no painel do serviço, gere outro e atualize na Vercel.                                                        |
 
 ## Modelo de segurança
 
@@ -150,6 +150,9 @@ Ao subir, o servidor avisa no log quais estão faltando (só os nomes).
 - **CPF cifrado** com AES-256-GCM. O contexto entra como dado associado, então
   o texto cifrado de um CPF não decifra se for copiado para outro campo. No
   painel aparece completo; no e-mail aos admins, mascarado.
+- **Telefone cifrado** do mesmo jeito (contexto `phone`), guardado como
+  `+55DDNNNNNNNNN`. Na lista de check-in vira link para o WhatsApp. Vai também
+  ao Mercado Pago como telefone do pagador, o que ajuda no antifraude.
 - **Segredos 2FA dos admins** cifrados do mesmo jeito.
 - **Senhas** com scrypt nos parâmetros mínimos da OWASP. Política do NIST:
   mínimo de 12 caracteres (14 para o master), sem regra de símbolo.
@@ -235,6 +238,24 @@ espaços extras). Um responsável pode matricular dois filhos com o próprio
 e-mail; o mesmo aluno não paga duas vezes por engano. Uma nova tentativa de
 pagamento do mesmo aluno cancela as tentativas pendentes anteriores dele — só
 dele, não dos irmãos.
+
+## Matrícula pelo painel (parcerias)
+
+Em _Turmas → editar turma → Matricular pelo painel_, um admin cadastra um
+aluno sem passar pelo Mercado Pago: nome, e-mail, parceria ou motivo
+(obrigatório), telefone e CPF opcionais e o valor pago por fora (0 =
+cortesia). A matrícula entra como `approved`, com `source = 'admin'` e
+`partner` preenchido.
+
+- Ocupa vaga e respeita o limite da turma: para encaixar alguém numa turma
+  cheia, aumente as vagas antes.
+- Vale a mesma regra de matrícula repetida (e-mail + nome).
+- O texto de ciência registra que a matrícula foi feita pela equipe, por quem
+  e para qual parceria; `consent_version` é `painel` e o IP é o do admin.
+- Não há reembolso pelo sistema: `/reembolso` mostra que a matrícula é de
+  parceria e manda falar com a equipe. O e-mail de confirmação troca o link
+  de reembolso pelo contato.
+- Gera `enrollment_created` na auditoria com `source`, `partner` e o autor.
 
 ## Termos de uso e privacidade
 

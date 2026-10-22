@@ -6,6 +6,7 @@ import { findCourse } from "@/lib/server/courses";
 import { formatBRL, formatDate, formatDateTime } from "@/lib/format";
 import { findEnrollment } from "@/lib/server/enrollments";
 import { findCohort } from "@/lib/server/cohorts";
+import { siteConfig } from "@/lib/site-config";
 import { refundDecisionFor } from "@/lib/server/refunds";
 import { readRefundToken } from "@/lib/server/tokens";
 import { confirmRefundRequest } from "../actions";
@@ -42,15 +43,20 @@ export default async function RefundRequestPage({
   // Prévia honesta do que vai acontecer — a decisão real é refeita no servidor
   // no momento do pedido.
   const cohort = await findCohort(enrollment.cohort_id);
+  // Matrícula de parceria não passou pelo Mercado Pago: não há o que estornar
+  // por aqui, e devolução (se houver) é combinada com a parceria.
+  const viaPartner = enrollment.source === "admin";
   const preview =
-    enrollment.payment_status === "approved"
+    enrollment.payment_status === "approved" && !viaPartner
       ? await refundDecisionFor(enrollment)
       : null;
 
   const result =
     typeof query.resultado === "string" ? RESULT[query.resultado] : null;
   const canRequest =
-    enrollment.payment_status === "approved" && !enrollment.refund_requested_at;
+    enrollment.payment_status === "approved" &&
+    !enrollment.refund_requested_at &&
+    !viaPartner;
 
   return (
     <main className="pillar-impressao-3d flex flex-1 flex-col">
@@ -113,9 +119,11 @@ export default async function RefundRequestPage({
           </form>
         ) : (
           <p className="mt-8 text-lg text-pretty text-muted-foreground">
-            {enrollment.refund_requested_at
-              ? `Pedido de reembolso feito em ${formatDateTime(enrollment.refund_requested_at)}.`
-              : RESULT.not_eligible}
+            {viaPartner && !enrollment.refund_requested_at
+              ? `Esta matrícula foi feita pela equipe da TkxHi${enrollment.partner ? ` (${enrollment.partner})` : ""}, sem pagamento pelo site. Para cancelar, fale com a gente pelo e-mail ${siteConfig.contact.email}.`
+              : enrollment.refund_requested_at
+                ? `Pedido de reembolso feito em ${formatDateTime(enrollment.refund_requested_at)}.`
+                : RESULT.not_eligible}
           </p>
         )}
 

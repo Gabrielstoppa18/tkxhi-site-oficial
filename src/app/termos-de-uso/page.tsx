@@ -18,7 +18,7 @@ export const metadata: Metadata = {
  * (src/lib/consent.ts), que prevalece sobre este resumo. Revise com um
  * advogado antes de publicar em produção.
  */
-const UPDATED_AT = "29 de setembro de 2026";
+const UPDATED_AT = "22 de outubro de 2026";
 
 export default function TermsPage() {
   const email = siteConfig.contact.email;
@@ -65,8 +65,8 @@ export default function TermsPage() {
         <ul>
           <li>
             A matrícula é feita pelo formulário da página do curso, com nome do
-            aluno, e-mail e CPF de quem paga. O nome informado é o que sai no
-            certificado.
+            aluno, e-mail, telefone e CPF de quem paga. O nome informado é o que
+            sai no certificado; o telefone serve para avisos sobre a turma.
           </li>
           <li>
             Antes de pagar, você lê e aceita as{" "}
@@ -86,6 +86,13 @@ export default function TermsPage() {
           <li>
             Quando o aluno for menor de 18 anos, a matrícula deve ser feita pelo
             responsável legal.
+          </li>
+          <li>
+            <strong>Matrículas por parceria</strong> (escolas, empresas e outras
+            instituições) são feitas pela nossa equipe, sem pagamento pelo site.
+            As condições de pagamento e de cancelamento dessas vagas são as
+            combinadas com a instituição parceira, e não as do reembolso pelo
+            site.
           </li>
         </ul>
       </LegalSection>
