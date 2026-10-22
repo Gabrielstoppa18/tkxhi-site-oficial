@@ -2,6 +2,7 @@ import { CONSENT_VERSION, consentText } from "@/lib/consent";
 import { courseHref } from "@/lib/courses";
 import { findCourse } from "@/lib/server/courses";
 import { normalizeCpf } from "@/lib/cpf";
+import { normalizePhone } from "@/lib/phone";
 import { audit } from "@/lib/server/audit";
 import { findCohort } from "@/lib/server/cohorts";
 import { encrypt } from "@/lib/server/crypto";
@@ -29,6 +30,7 @@ type Body = {
   name?: unknown;
   email?: unknown;
   cpf?: unknown;
+  phone?: unknown;
   consent?: unknown;
   consentVersion?: unknown;
 };
@@ -108,6 +110,16 @@ export async function POST(request: Request) {
   const cpf = typeof body.cpf === "string" ? normalizeCpf(body.cpf) : null;
   if (!cpf) return fail("CPF inválido. Confira os números.", 400, "cpf");
 
+  const phone =
+    typeof body.phone === "string" ? normalizePhone(body.phone) : null;
+  if (!phone) {
+    return fail(
+      "Telefone inválido. Informe o DDD e o número, ex.: (64) 99999-9999.",
+      400,
+      "phone",
+    );
+  }
+
   // A ciência tem de ser um `true` explícito, e da versão do texto que o
   // servidor mostraria agora — um formulário aberto antes de uma mudança de
   // redação precisa ser recarregado.
@@ -152,12 +164,12 @@ export async function POST(request: Request) {
 
   const [enrollment] = await db()<{ id: string }[]>`
     INSERT INTO enrollments (
-      course_id, cohort_id, buyer_name, buyer_email, buyer_cpf_enc,
+      course_id, cohort_id, buyer_name, buyer_email, buyer_cpf_enc, buyer_phone_enc,
       amount_cents, late_refund_percent, late_refund_days_before,
       consent_text, consent_version, consent_timestamp, consent_ip, consent_user_agent,
       checkin_token, certificate_token
     ) VALUES (
-      ${course.slug}, ${cohort.id}, ${name}, ${email}, ${encrypt(cpf, "cpf")},
+      ${course.slug}, ${cohort.id}, ${name}, ${email}, ${encrypt(cpf, "cpf")}, ${encrypt(phone, "phone")},
       ${cohort.priceCents}, ${cohort.lateRefundPercent}, ${cohort.lateRefundDaysBefore},
       ${text}, ${CONSENT_VERSION}, now(), ${ip}, ${userAgent(request.headers)},
       ${createOpaqueToken()}, ${createOpaqueToken()}
@@ -184,7 +196,7 @@ export async function POST(request: Request) {
       courseSlug: course.slug,
       title: `Curso ${course.title} — ${course.edition}`,
       amountCents: cohort.priceCents,
-      buyer: { name, email, cpf },
+      buyer: { name, email, cpf, phone },
       backUrl: `${appUrl()}${courseHref(course)}/confirmacao?matricula=${enrollment.id}`,
       expiresAt: new Date(Date.now() + PENDING_HOLD_MINUTES * 60_000),
     });

@@ -62,7 +62,7 @@ export async function createPreference(input: {
   courseSlug: string;
   title: string;
   amountCents: number;
-  buyer: { name: string; email: string; cpf: string };
+  buyer: { name: string; email: string; cpf: string; phone?: string };
   backUrl: string;
   expiresAt: Date;
 }): Promise<Preference> {
@@ -86,6 +86,15 @@ export async function createPreference(input: {
         name: input.buyer.name,
         email: input.buyer.email,
         identification: { type: "CPF", number: input.buyer.cpf },
+        // Telefone do comprador pesa a favor no antifraude do Mercado Pago.
+        ...(input.buyer.phone
+          ? {
+              phone: {
+                area_code: input.buyer.phone.slice(3, 5),
+                number: input.buyer.phone.slice(5),
+              },
+            }
+          : {}),
       },
       external_reference: input.enrollmentId,
       back_urls: {

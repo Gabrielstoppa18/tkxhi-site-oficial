@@ -73,7 +73,7 @@ export function randomToken(bytes = 32): string {
 }
 
 /** Contexto que vai como AAD: define onde um texto cifrado pode ser usado. */
-export type CipherContext = "cpf" | "totp";
+export type CipherContext = "cpf" | "phone" | "totp";
 
 const VERSION = "v1";
 

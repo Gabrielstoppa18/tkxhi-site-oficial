@@ -150,9 +150,9 @@ CREATE TABLE IF NOT EXISTS enrollments (
   buyer_name              text NOT NULL,
   buyer_email             text NOT NULL,
   -- CPF cifrado com AES-256-GCM (DATA_ENCRYPTION_KEY). Nunca em texto puro.
-  buyer_cpf_enc           text NOT NULL,
+  buyer_cpf_enc           text,  -- obrigatório na matrícula do site (ver abaixo)
   -- Congelados no momento da compra: o aluno aceitou estas condições.
-  amount_cents            integer NOT NULL CHECK (amount_cents > 0),
+  amount_cents            integer NOT NULL CHECK (amount_cents >= 0),
   late_refund_percent     integer NOT NULL,
   late_refund_days_before integer NOT NULL,
 
@@ -193,6 +193,33 @@ CREATE TABLE IF NOT EXISTS enrollments (
 
 CREATE INDEX IF NOT EXISTS enrollments_cohort_idx ON enrollments (cohort_id, payment_status);
 CREATE INDEX IF NOT EXISTS enrollments_email_idx ON enrollments (lower(buyer_email));
+
+-- Acréscimos posteriores à criação da tabela. ALTER idempotente para valer
+-- também nos bancos que já existiam.
+
+-- Telefone (WhatsApp) para avisos da turma. Cifrado como o CPF; matrículas
+-- antigas ficam sem.
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS buyer_phone_enc text;
+
+-- Origem da matrícula: 'checkout' (o aluno pagou pelo site) ou 'admin'
+-- (cadastrada pela equipe no painel, ex.: parceria). A de painel não tem
+-- pagamento no Mercado Pago, então não entra no reembolso automático.
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS source text NOT NULL DEFAULT 'checkout';
+ALTER TABLE enrollments DROP CONSTRAINT IF EXISTS enrollments_source_check;
+ALTER TABLE enrollments ADD CONSTRAINT enrollments_source_check
+  CHECK (source IN ('checkout', 'admin'));
+-- Nome da parceria ou motivo, obrigatório na matrícula feita pelo painel.
+ALTER TABLE enrollments ADD COLUMN IF NOT EXISTS partner text;
+
+-- Matrícula de parceria pode não ter CPF do aluno e pode ser cortesia (R$ 0).
+ALTER TABLE enrollments ALTER COLUMN buyer_cpf_enc DROP NOT NULL;
+ALTER TABLE enrollments DROP CONSTRAINT IF EXISTS enrollments_amount_cents_check;
+ALTER TABLE enrollments ADD CONSTRAINT enrollments_amount_cents_check
+  CHECK (amount_cents >= 0 AND (amount_cents > 0 OR source = 'admin'));
+-- Matrícula do site sempre tem CPF (exigido pelo pagamento).
+ALTER TABLE enrollments DROP CONSTRAINT IF EXISTS enrollments_cpf_required_check;
+ALTER TABLE enrollments ADD CONSTRAINT enrollments_cpf_required_check
+  CHECK (source = 'admin' OR buyer_cpf_enc IS NOT NULL);
 
 CREATE OR REPLACE FUNCTION touch_updated_at() RETURNS trigger AS $$
 BEGIN

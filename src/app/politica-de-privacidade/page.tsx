@@ -16,12 +16,12 @@ export const metadata: Metadata = {
  * ou um fornecedor, atualize esta página e a data abaixo. Revise o texto com
  * um advogado antes de publicar em produção.
  */
-const UPDATED_AT = "28 de setembro de 2026";
+const UPDATED_AT = "22 de outubro de 2026";
 
 const processors = [
   {
     name: "Mercado Pago",
-    role: "processamento do pagamento (Pix ou cartão) e dos reembolsos",
+    role: "processamento do pagamento (Pix ou cartão) e dos reembolsos; recebe nome, e-mail, CPF e telefone de quem paga, usados também na prevenção de fraude",
   },
   {
     name: "Resend",
@@ -71,10 +71,22 @@ export default function PrivacyPolicyPage() {
           <li>e-mail, para enviar a confirmação e o QR code de entrada;</li>
           <li>CPF, exigido para o pagamento;</li>
           <li>
+            telefone (de preferência com WhatsApp), para avisos sobre a turma,
+            como mudança de horário ou de local, e para falarmos com você se
+            houver algum problema com a matrícula;
+          </li>
+          <li>
             o registro da sua ciência das condições da matrícula: o texto
             aceito, a data e a hora, o endereço IP e o navegador usados.
           </li>
         </ul>
+        <p>
+          <strong>Em matrículas por parceria:</strong> quando a matrícula é
+          feita pela nossa equipe, a pedido de uma instituição parceira, os
+          dados do aluno (nome, e-mail e, se informados, telefone e CPF) são os
+          enviados pela parceria. Registramos também o nome da parceria e quem
+          da equipe fez o cadastro.
+        </p>
         <p>
           <strong>No pagamento:</strong> o pagamento é feito no ambiente do
           Mercado Pago. Recebemos o número, a situação e o valor do pagamento.{" "}
@@ -107,6 +119,13 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong>Processar pagamento e reembolso</strong> — execução do
             contrato (art. 7º, V). O CPF é exigido pelo meio de pagamento.
+          </li>
+          <li>
+            <strong>Avisar sobre a turma pelo telefone ou WhatsApp</strong>{" "}
+            (mudanças de data, horário ou local, lembretes e problemas com a
+            matrícula) — execução do contrato (art. 7º, V). Não usamos o
+            telefone para propaganda, nem o passamos a terceiros além do meio de
+            pagamento.
           </li>
           <li>
             <strong>Cumprir obrigações legais e fiscais</strong> — art. 7º, II.
@@ -166,7 +185,7 @@ export default function PrivacyPolicyPage() {
       <LegalSection title="Como protegemos">
         <ul>
           <li>todo acesso ao site é feito por conexão cifrada (HTTPS);</li>
-          <li>o CPF fica cifrado no banco de dados;</li>
+          <li>o CPF e o telefone ficam cifrados no banco de dados;</li>
           <li>
             o painel da equipe exige senha e verificação em duas etapas, e
             bloqueia tentativas repetidas de acesso;

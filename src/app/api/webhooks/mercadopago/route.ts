@@ -1,5 +1,8 @@
 import { audit } from "@/lib/server/audit";
-import { verifyWebhookSignature } from "@/lib/server/mercadopago";
+import {
+  MercadoPagoError,
+  verifyWebhookSignature,
+} from "@/lib/server/mercadopago";
 import { syncPayment } from "@/lib/server/payments";
 import { clientIp } from "@/lib/server/request";
 
@@ -9,7 +12,8 @@ import { clientIp } from "@/lib/server/request";
  *
  * 1. Valida o x-signature. Sem assinatura válida, 401 e nada muda.
  * 2. Usa só o id do pagamento — o estado vem de uma consulta à API.
- * 3. Responde 200 rápido; erro na consulta devolve 500 para o MP tentar de novo.
+ * 3. Responde 200 rápido; erro na consulta devolve 500 para o MP tentar de novo
+ *    — menos para pagamento inexistente, em que repetir não adianta.
  */
 export async function POST(request: Request) {
   const url = new URL(request.url);
@@ -55,6 +59,18 @@ export async function POST(request: Request) {
   try {
     await syncPayment(dataId, "webhook");
   } catch (error) {
+    // Pagamento que não existe na conta (ex.: "Simular notificação" do
+    // painel, que usa um id fictício): tentar de novo não resolve. Responde
+    // 200 para o Mercado Pago parar de reenviar e deixa o registro.
+    if (error instanceof MercadoPagoError && error.status === 404) {
+      await audit({
+        actor: "webhook",
+        action: "webhook_received",
+        ip,
+        details: { type, dataId, result: "pagamento não encontrado na conta" },
+      });
+      return new Response(null, { status: 200 });
+    }
     console.error("Falha ao sincronizar pagamento", dataId, error);
     return new Response("erro ao consultar o pagamento", { status: 500 });
   }

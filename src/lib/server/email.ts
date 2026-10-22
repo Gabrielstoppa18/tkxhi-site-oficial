@@ -10,7 +10,12 @@ import {
   formatTime,
 } from "@/lib/format";
 import { audit, type AuditEntry } from "@/lib/server/audit";
-import { buyerCpf, type Enrollment } from "@/lib/server/enrollments";
+import {
+  buyerCpf,
+  buyerPhone,
+  type Enrollment,
+} from "@/lib/server/enrollments";
+import { formatPhone } from "@/lib/phone";
 import { appUrl, env } from "@/lib/server/env";
 import { createRefundToken } from "@/lib/server/tokens";
 
@@ -145,6 +150,10 @@ export async function sendEnrollmentConfirmation(
   const qr = await QRCode.toBuffer(checkinUrl, { width: 480, margin: 2 });
   const qrSrc = `${appUrl()}/api/checkin/qr/${enrollment.checkin_token}`;
 
+  // Matrícula de parceria não passou pelo site: desistência é com a equipe.
+  const viaPartner = enrollment.source === "admin";
+  const contact = siteConfig.contact.email;
+
   const when = `${formatDate(cohort.startsAt)}, das ${formatTime(cohort.startsAt)} às ${formatTime(cohort.endsAt)}`;
   const where = `${cohort.venue} — ${cohort.address}`;
 
@@ -155,7 +164,9 @@ export async function sendEnrollmentConfirmation(
     `Onde: ${where}`,
     `Matrícula: ${enrollment.id}`,
     "No dia, apresente o QR code anexado a este e-mail na entrada. Ele é o registro da sua presença e é pessoal.",
-    `Precisa desistir? Você pode pedir o reembolso em ${appUrl()}/reembolso.`,
+    viaPartner
+      ? `Não vai poder ir? Avise a gente pelo e-mail ${contact}.`
+      : `Precisa desistir? Você pode pedir o reembolso em ${appUrl()}/reembolso.`,
   ].join("\n\n");
 
   await send({
@@ -174,8 +185,10 @@ export async function sendEnrollmentConfirmation(
         `<p style="margin:20px 0;text-align:center"><img src="${escape(qrSrc)}" width="240" height="240" alt="QR code de check-in da sua matrícula"></p>` +
         paragraphs([
           `O mesmo QR code vai em anexo, caso seu leitor de e-mail bloqueie imagens.`,
-          `<span style="color:#6b5a7d;font-size:13px">Matrícula ${escape(enrollment.id)} · ${escape(formatBRL(enrollment.amount_cents))}</span>`,
-          `Precisa desistir? Peça o reembolso em <a href="${escape(`${appUrl()}/reembolso`)}" style="color:#822ca3">${escape(`${appUrl()}/reembolso`)}</a>.`,
+          `<span style="color:#6b5a7d;font-size:13px">Matrícula ${escape(enrollment.id)}${viaPartner ? "" : ` · ${escape(formatBRL(enrollment.amount_cents))}`}</span>`,
+          viaPartner
+            ? `Não vai poder ir? Avise a gente pelo e-mail <a href="mailto:${escape(contact)}" style="color:#822ca3">${escape(contact)}</a>.`
+            : `Precisa desistir? Peça o reembolso em <a href="${escape(`${appUrl()}/reembolso`)}" style="color:#822ca3">${escape(`${appUrl()}/reembolso`)}</a>.`,
         ]),
     ),
   });
@@ -279,14 +292,26 @@ export function evidenceDossier(
   enrollment: Enrollment,
   course: Course | undefined,
   trail: AuditEntry[],
-  /** E-mail não é canal seguro: por padrão o CPF sai mascarado. Completo só no painel. */
+  /** E-mail não é canal seguro: por padrão CPF e telefone saem mascarados. Completos só no painel. */
   { fullCpf = false }: { fullCpf?: boolean } = {},
 ): string {
-  const cpf = formatCpf(buyerCpf(enrollment));
+  const rawCpf = buyerCpf(enrollment);
+  const cpf = rawCpf
+    ? fullCpf
+      ? formatCpf(rawCpf)
+      : `***.${formatCpf(rawCpf).slice(4, 11)}-**`
+    : "não informado";
+  const rawPhone = buyerPhone(enrollment);
+  const phone = rawPhone
+    ? fullCpf
+      ? formatPhone(rawPhone)
+      : `${formatPhone(rawPhone).slice(0, 4)} *****-${rawPhone.slice(-4)}`
+    : "não informado";
   const lines = [
     `Curso: ${course?.title ?? enrollment.course_id}`,
     `Matrícula: ${enrollment.id}`,
-    `Aluno: ${enrollment.buyer_name} <${enrollment.buyer_email}> · CPF ${fullCpf ? cpf : `***.${cpf.slice(4, 11)}-**`}`,
+    `Origem: ${enrollment.source === "admin" ? `painel (parceria: ${enrollment.partner ?? "—"})` : "site"}`,
+    `Aluno: ${enrollment.buyer_name} <${enrollment.buyer_email}> · CPF ${cpf} · telefone ${phone}`,
     `Valor: ${formatBRL(enrollment.amount_cents)} · pagamento MP ${enrollment.mp_payment_id ?? "—"} · status ${enrollment.payment_status}`,
     `Pago em: ${enrollment.paid_at ? formatDateTime(enrollment.paid_at) : "—"}`,
     "",

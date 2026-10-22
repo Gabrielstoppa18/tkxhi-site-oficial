@@ -1,12 +1,22 @@
 import Link from "next/link";
-import { Award, Check, MailWarning, Send, Undo2 } from "lucide-react";
+import {
+  Award,
+  Check,
+  Handshake,
+  MailWarning,
+  MessageCircle,
+  Send,
+  Undo2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { courseTitles, findCourse } from "@/lib/server/courses";
 import { formatCpf, formatDate, formatTime } from "@/lib/format";
+import { formatPhone, whatsappLink } from "@/lib/phone";
 import { confirmationsSent } from "@/lib/server/audit";
 import { currentCohort, findCohort, listCohorts } from "@/lib/server/cohorts";
 import {
   buyerCpf,
+  buyerPhone,
   isActive,
   listCohortEnrollments,
 } from "@/lib/server/enrollments";
@@ -131,72 +141,97 @@ export default async function CheckinPage({
             Nenhuma matrícula nesta turma ainda.
           </li>
         ) : null}
-        {enrollments.map((item) => (
-          <li
-            key={item.id}
-            className="flex flex-wrap items-center gap-x-6 gap-y-3 py-4"
-          >
-            <div className="min-w-0 flex-1">
-              <p className="font-medium">{item.buyer_name}</p>
-              <p className="truncate font-mono text-xs text-muted-foreground">
-                {item.buyer_email} · {formatCpf(buyerCpf(item))}
-              </p>
-              {isActive(item) ? (
-                <form
-                  action={resendConfirmation}
-                  className="mt-1 flex items-center gap-2 text-xs"
-                >
-                  <input type="hidden" name="enrollmentId" value={item.id} />
-                  {confirmed.has(item.id) ? null : (
-                    <span className="flex items-center gap-1 text-destructive">
-                      <MailWarning aria-hidden className="size-3.5" />
-                      Confirmação não enviada
+        {enrollments.map((item) => {
+          const cpf = buyerCpf(item);
+          const phone = buyerPhone(item);
+          return (
+            <li
+              key={item.id}
+              className="flex flex-wrap items-center gap-x-6 gap-y-3 py-4"
+            >
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-x-3 gap-y-1 font-medium">
+                  {item.buyer_name}
+                  {item.source === "admin" ? (
+                    <span className="inline-flex items-center gap-1 border border-border px-1.5 py-0.5 font-mono text-[0.7rem] font-normal tracking-wide text-muted-foreground uppercase">
+                      <Handshake aria-hidden className="size-3.5" />
+                      Parceria{item.partner ? `: ${item.partner}` : ""}
                     </span>
-                  )}
-                  <button
-                    type="submit"
-                    className="inline-flex min-h-11 items-center gap-1 text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                  ) : null}
+                </p>
+                <p className="truncate font-mono text-xs text-muted-foreground">
+                  {item.buyer_email}
+                  {cpf ? ` · ${formatCpf(cpf)}` : ""}
+                </p>
+                {phone ? (
+                  <a
+                    href={whatsappLink(phone)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex min-h-11 items-center gap-1 font-mono text-xs text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
                   >
-                    <Send aria-hidden className="size-3.5" />
-                    {confirmed.has(item.id)
-                      ? "Reenviar confirmação"
-                      : "Enviar confirmação"}
-                  </button>
-                </form>
-              ) : null}
-            </div>
-            {!isActive(item) ? (
-              <span className="font-mono text-xs tracking-wide text-muted-foreground uppercase">
-                {item.payment_status === "pending"
-                  ? "pagamento pendente"
-                  : "reembolsado"}
-              </span>
-            ) : item.attendance_confirmed ? (
-              <form action={undoCheckin} className="flex items-center gap-3">
-                <input type="hidden" name="enrollmentId" value={item.id} />
-                <span className="flex items-center gap-1 text-sm text-primary">
-                  <Check aria-hidden className="size-4" />
-                  Presente às {formatTime(item.attendance_timestamp!)}
+                    <MessageCircle aria-hidden className="size-3.5" />
+                    {formatPhone(phone)}
+                    <span className="sr-only"> (abre o WhatsApp)</span>
+                  </a>
+                ) : null}
+                {isActive(item) ? (
+                  <form
+                    action={resendConfirmation}
+                    className="mt-1 flex items-center gap-2 text-xs"
+                  >
+                    <input type="hidden" name="enrollmentId" value={item.id} />
+                    {confirmed.has(item.id) ? null : (
+                      <span className="flex items-center gap-1 text-destructive">
+                        <MailWarning aria-hidden className="size-3.5" />
+                        Confirmação não enviada
+                      </span>
+                    )}
+                    <button
+                      type="submit"
+                      className="inline-flex min-h-11 items-center gap-1 text-muted-foreground underline underline-offset-4 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                    >
+                      <Send aria-hidden className="size-3.5" />
+                      {confirmed.has(item.id)
+                        ? "Reenviar confirmação"
+                        : "Enviar confirmação"}
+                    </button>
+                  </form>
+                ) : null}
+              </div>
+              {!isActive(item) ? (
+                <span className="font-mono text-xs tracking-wide text-muted-foreground uppercase">
+                  {item.payment_status === "pending"
+                    ? "pagamento pendente"
+                    : "reembolsado"}
                 </span>
-                <Button
-                  type="submit"
-                  variant="ghost"
-                  className="h-11"
-                  aria-label={`Desfazer check-in de ${item.buyer_name}`}
-                >
-                  <Undo2 aria-hidden />
-                </Button>
-              </form>
-            ) : (
-              <form action={confirmCheckin}>
-                <input type="hidden" name="enrollmentId" value={item.id} />
-                <Button type="submit" className="h-11 px-4">
-                  Marcar presença
-                </Button>
-              </form>
-            )}
-          </li>
-        ))}
+              ) : item.attendance_confirmed ? (
+                <form action={undoCheckin} className="flex items-center gap-3">
+                  <input type="hidden" name="enrollmentId" value={item.id} />
+                  <span className="flex items-center gap-1 text-sm text-primary">
+                    <Check aria-hidden className="size-4" />
+                    Presente às {formatTime(item.attendance_timestamp!)}
+                  </span>
+                  <Button
+                    type="submit"
+                    variant="ghost"
+                    className="h-11"
+                    aria-label={`Desfazer check-in de ${item.buyer_name}`}
+                  >
+                    <Undo2 aria-hidden />
+                  </Button>
+                </form>
+              ) : (
+                <form action={confirmCheckin}>
+                  <input type="hidden" name="enrollmentId" value={item.id} />
+                  <Button type="submit" className="h-11 px-4">
+                    Marcar presença
+                  </Button>
+                </form>
+              )}
+            </li>
+          );
+        })}
       </ul>
 
       <form action={sendCertificates} className="mt-10">
